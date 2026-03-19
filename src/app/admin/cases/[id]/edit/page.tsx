@@ -100,16 +100,18 @@ export default function AdminCasesEditPage() {
                 className="grid gap-5"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  const next = casesStore.update(id, {
-                    ...item,
-                    tags: linesToArray(tagsText),
-                  });
-                  if (!next) return;
-                  setItem(next);
-                  toast({
-                    title: "已儲存",
-                    description: `案例「${next.name}」已更新。`,
-                  });
+                  void (async () => {
+                    const next = await casesStore.apiUpdate(id, {
+                      ...item,
+                      tags: linesToArray(tagsText),
+                    });
+                    if (!next) return;
+                    setItem(next);
+                    toast({
+                      title: "已儲存",
+                      description: `案例「${next.name}」已更新。`,
+                    });
+                  })();
                 }}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -244,12 +246,14 @@ export default function AdminCasesEditPage() {
                         `確定要刪除案例「${item.name}｜${item.title}」嗎？此操作無法復原。`
                       );
                       if (!ok) return;
-                      casesStore.remove(id);
-                      toast({
-                        title: "已刪除",
-                        description: `已刪除案例「${item.name}」。`,
-                      });
-                      router.push("/admin/cases");
+                      void (async () => {
+                        await casesStore.apiRemove(id);
+                        toast({
+                          title: "已刪除",
+                          description: `已刪除案例「${item.name}」。`,
+                        });
+                        router.push("/admin/cases");
+                      })();
                     }}
                   >
                     刪除案例

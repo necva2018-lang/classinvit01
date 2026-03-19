@@ -10,6 +10,10 @@ export function isBrowser() {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
 
+export function safeJsonResponse<T>(res: Response): Promise<T> {
+  return res.json() as Promise<T>;
+}
+
 export function safeParseJson<T>(raw: string | null, fallback: T): T {
   if (!raw) return fallback;
   try {

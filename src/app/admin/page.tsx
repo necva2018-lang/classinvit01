@@ -7,7 +7,6 @@ import {
   BookOpen,
   Film,
   LayoutDashboard,
-  Newspaper,
   PlayCircle,
   TrendingUp,
   Users,
@@ -51,46 +50,56 @@ export default function AdminDashboardPage() {
 
   React.useEffect(() => {
     if (!hydrated) return;
-    const courses = coursesStore.getAll();
-    const cases = casesStore.getAll();
-    const media = mediaStore.getAll();
-    const leads = leadsStore.getAll();
-    const publishedCount =
-      courses.filter((c) => c.isPublished).length +
-      cases.filter((c) => c.isPublished).length +
-      media.filter((m) => m.isPublished).length;
+    let cancelled = false;
+    (async () => {
+      const [courses, cases, media, leads] = await Promise.all([
+        coursesStore.apiGetAll(),
+        casesStore.apiGetAll(),
+        mediaStore.apiGetAll(),
+        leadsStore.apiGetAll(),
+      ]);
+      if (cancelled) return;
+      const publishedCount =
+        courses.filter((c) => c.isPublished).length +
+        cases.filter((c) => c.isPublished).length +
+        media.filter((m) => m.isPublished).length;
 
-    const leadStats = leadsStore.getStats();
-    setByCourse(leadStats.byCourse);
-    setLatestLeads(leads.slice(0, 8));
-    setStats([
-      {
-        label: "課程數量",
-        value: courses.length,
-        icon: <BookOpen className="h-4 w-4" />,
-      },
-      {
-        label: "案例數量",
-        value: cases.length,
-        icon: <LayoutDashboard className="h-4 w-4" />,
-      },
-      {
-        label: "影音數量",
-        value: media.length,
-        icon: <Film className="h-4 w-4" />,
-      },
-      {
-        label: "已上架數",
-        value: publishedCount,
-        icon: <PlayCircle className="h-4 w-4" />,
-        tone: "primary",
-      },
-      {
-        label: "Leads 數量",
-        value: leads.length,
-        icon: <Users className="h-4 w-4" />,
-      },
-    ]);
+      const byCourse: Record<string, number> = {};
+      for (const l of leads) byCourse[l.course] = (byCourse[l.course] ?? 0) + 1;
+      setByCourse(byCourse);
+      setLatestLeads(leads.slice(0, 8));
+      setStats([
+        {
+          label: "課程數量",
+          value: courses.length,
+          icon: <BookOpen className="h-4 w-4" />,
+        },
+        {
+          label: "案例數量",
+          value: cases.length,
+          icon: <LayoutDashboard className="h-4 w-4" />,
+        },
+        {
+          label: "影音數量",
+          value: media.length,
+          icon: <Film className="h-4 w-4" />,
+        },
+        {
+          label: "已上架數",
+          value: publishedCount,
+          icon: <PlayCircle className="h-4 w-4" />,
+          tone: "primary",
+        },
+        {
+          label: "Leads 數量",
+          value: leads.length,
+          icon: <Users className="h-4 w-4" />,
+        },
+      ]);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [hydrated]);
 
   return (

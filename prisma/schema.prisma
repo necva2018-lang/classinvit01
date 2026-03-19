@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CourseCategory {
+  unemployed_subsidy
+  employed_subsidy
+  self_paid
+}
+
+enum MediaType {
+  hero
+  course
+  case
+  promo
+}
+
+model Course {
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  category         CourseCategory
+  subtitle         String
+  shortDescription String
+  description      String
+  audience         String[]
+  highlights       String[]
+  contents         String[]
+  location         String
+  schedule         String
+  subsidy          String
+  fee              String
+  image            String
+  videoUrl         String
+  ctaLabel         String
+  isPublished      Boolean        @default(false)
+  sortOrder        Int            @default(50)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  media            MediaItem[]    @relation("MediaCourse")
+}
+
+model CaseItem {
+  id          String      @id @default(cuid())
+  name        String
+  title       String
+  summary     String
+  beforeStatus String
+  afterStatus String
+  quote       String
+  image       String
+  videoUrl    String?
+  tags        String[]
+  isFeatured  Boolean     @default(false)
+  isPublished Boolean     @default(false)
+  sortOrder   Int         @default(50)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  media       MediaItem[] @relation("MediaCase")
+}
+
+model MediaItem {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  videoUrl       String
+  thumbnailUrl   String
+  type           MediaType
+  isPublished    Boolean  @default(false)
+  sortOrder      Int      @default(50)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  relatedCourseId String?
+  relatedCourse   Course? @relation("MediaCourse", fields: [relatedCourseId], references: [id], onDelete: SetNull)
+
+  relatedCaseId  String?
+  relatedCase    CaseItem? @relation("MediaCase", fields: [relatedCaseId], references: [id], onDelete: SetNull)
+
+  @@index([type, isPublished, sortOrder])
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  course      String
+  contactTime String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+

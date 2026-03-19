@@ -104,13 +104,15 @@ export default function AdminMediaEditPage() {
                 className="grid gap-5"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  const next = mediaStore.update(id, item);
-                  if (!next) return;
-                  setItem(next);
-                  toast({
-                    title: "已儲存",
-                    description: `影音「${next.title}」已更新。`,
-                  });
+                  void (async () => {
+                    const next = await mediaStore.apiUpdate(id, item);
+                    if (!next) return;
+                    setItem(next);
+                    toast({
+                      title: "已儲存",
+                      description: `影音「${next.title}」已更新。`,
+                    });
+                  })();
                 }}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -300,12 +302,14 @@ export default function AdminMediaEditPage() {
                         `確定要刪除影音「${item.title}」嗎？此操作無法復原。`
                       );
                       if (!ok) return;
-                      mediaStore.remove(id);
-                      toast({
-                        title: "已刪除",
-                        description: `已刪除影音「${item.title}」。`,
-                      });
-                      router.push("/admin/media");
+                      void (async () => {
+                        await mediaStore.apiRemove(id);
+                        toast({
+                          title: "已刪除",
+                          description: `已刪除影音「${item.title}」。`,
+                        });
+                        router.push("/admin/media");
+                      })();
                     }}
                   >
                     刪除影音

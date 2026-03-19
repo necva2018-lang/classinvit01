@@ -240,15 +240,17 @@ export default function AdminCasesNewPage() {
                       });
                       return;
                     }
-                    const created = casesStore.create({
-                      ...draft,
-                      tags: linesToArray(tagsText),
-                    });
-                    toast({
-                      title: "建立成功",
-                      description: `已建立案例「${created.name}」。`,
-                    });
-                    router.push(`/admin/cases/${created.id}/edit`);
+                    void (async () => {
+                      const created = await casesStore.apiCreate({
+                        ...draft,
+                        tags: linesToArray(tagsText),
+                      });
+                      toast({
+                        title: "建立成功",
+                        description: `已建立案例「${created.name}」。`,
+                      });
+                      router.push(`/admin/cases/${created.id}/edit`);
+                    })();
                   }}
                 >
                   建立案例

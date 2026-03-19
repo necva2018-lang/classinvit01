@@ -1,8 +1,16 @@
 import type { ID, MediaItem, MediaType } from "@/types";
-import { generateId, nowIso, storageGet, storageSet } from "@/lib/storage";
+import {
+  generateId,
+  isBrowser,
+  nowIso,
+  safeJsonResponse,
+  storageGet,
+  storageSet,
+} from "@/lib/storage";
 import { seedMedia } from "@/data/seed-media";
 
 const KEY = "cms:media:v1";
+const API = "/api/media";
 
 function normalize(items: MediaItem[]) {
   return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -71,5 +79,72 @@ export function togglePublished(id: ID) {
   const item = getById(id);
   if (!item) return null;
   return update(id, { isPublished: !item.isPublished });
+}
+
+async function tryFetchJson<T>(input: RequestInfo, init?: RequestInit) {
+  if (!isBrowser()) return null;
+  try {
+    const res = await fetch(input, init);
+    if (!res.ok) return null;
+    return await safeJsonResponse<T>(res);
+  } catch {
+    return null;
+  }
+}
+
+export async function apiGetAll() {
+  const items = await tryFetchJson<MediaItem[]>(API, { cache: "no-store" });
+  return items ? normalize(items) : getAll();
+}
+
+export async function apiGetPublishedByType(type: MediaType) {
+  const items = await tryFetchJson<MediaItem[]>(`${API}?type=${type}&published=1`, {
+    cache: "no-store",
+  });
+  return items ? normalize(items) : getPublishedByType(type);
+}
+
+export async function apiCreate(
+  input: Omit<MediaItem, "id" | "createdAt" | "updatedAt">
+) {
+  const created = await tryFetchJson<MediaItem>(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (created) return created;
+  return create(input);
+}
+
+export async function apiUpdate(
+  id: ID,
+  patch: Partial<Omit<MediaItem, "id" | "createdAt">>
+) {
+  const updated = await tryFetchJson<MediaItem>(`${API}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (updated) return updated;
+  return update(id, patch);
+}
+
+export async function apiRemove(id: ID) {
+  const ok = await tryFetchJson<{ ok: true }>(`${API}/${id}`, {
+    method: "DELETE",
+  });
+  if (ok) return true;
+  return remove(id);
+}
+
+export async function apiTogglePublished(id: ID) {
+  const item = getById(id);
+  const updated = await tryFetchJson<MediaItem>(`${API}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isPublished: item ? !item.isPublished : true }),
+  });
+  if (updated) return updated;
+  return togglePublished(id);
 }
 

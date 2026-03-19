@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClassInvit01
 
-## Getting Started
+招生型網站 + 後台 CMS（Courses / Cases / Media / Leads）。
 
-First, run the development server:
+## Tech Stack
+
+- Next.js App Router + TypeScript
+- Tailwind CSS + shadcn/ui
+- Prisma + PostgreSQL（Zeabur 可用）
+- localStorage fallback（API 不可用時）
+
+## Local Development
+
+1. 建立環境變數（請勿把真實密碼提交到 Git）：
+
+```bash
+cp .env.example .env
+```
+
+2. 安裝與初始化資料庫：
+
+```bash
+npm install
+npm run db:push
+npm run db:seed
+```
+
+3. 啟動：
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `GET/POST /api/courses`
+- `GET/PATCH/DELETE /api/courses/:id`
+- `GET/POST /api/cases`
+- `GET/PATCH/DELETE /api/cases/:id`
+- `GET/POST /api/media`
+- `GET/PATCH/DELETE /api/media/:id`
+- `GET/POST /api/leads`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Zeabur Deployment (PostgreSQL)
 
-## Learn More
+1. 在 Zeabur 建立 PostgreSQL Service。
+2. 在 Web Service 設定環境變數：
+   - `DATABASE_URL=<your-postgresql-url>`
+3. Build Command（建議）：
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install && npm run prisma:generate && npm run db:push && npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Start Command：
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run start
+```
 
-## Deploy on Vercel
+5. 首次初始化資料（可在一次性 Job 或 Console 執行）：
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run db:seed
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+
+- 後台操作（建立/編輯/刪除/上架切換）會優先走 API + PostgreSQL。
+- 若 API 異常，前端資料層會 fallback 到 localStorage，避免整站中斷。

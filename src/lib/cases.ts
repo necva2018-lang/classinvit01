@@ -1,8 +1,16 @@
 import type { CaseItem, ID } from "@/types";
-import { generateId, nowIso, storageGet, storageSet } from "@/lib/storage";
+import {
+  generateId,
+  isBrowser,
+  nowIso,
+  safeJsonResponse,
+  storageGet,
+  storageSet,
+} from "@/lib/storage";
 import { seedCases } from "@/data/seed-cases";
 
 const KEY = "cms:cases:v1";
+const API = "/api/cases";
 
 function normalize(items: CaseItem[]) {
   return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -73,5 +81,76 @@ export function toggleFeatured(id: ID) {
   const item = getById(id);
   if (!item) return null;
   return update(id, { isFeatured: !item.isFeatured });
+}
+
+async function tryFetchJson<T>(input: RequestInfo, init?: RequestInit) {
+  if (!isBrowser()) return null;
+  try {
+    const res = await fetch(input, init);
+    if (!res.ok) return null;
+    return await safeJsonResponse<T>(res);
+  } catch {
+    return null;
+  }
+}
+
+export async function apiGetAll() {
+  const items = await tryFetchJson<CaseItem[]>(API, { cache: "no-store" });
+  return items ? normalize(items) : getAll();
+}
+
+export async function apiCreate(
+  input: Omit<CaseItem, "id" | "createdAt" | "updatedAt">
+) {
+  const created = await tryFetchJson<CaseItem>(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (created) return created;
+  return create(input);
+}
+
+export async function apiUpdate(
+  id: ID,
+  patch: Partial<Omit<CaseItem, "id" | "createdAt">>
+) {
+  const updated = await tryFetchJson<CaseItem>(`${API}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (updated) return updated;
+  return update(id, patch);
+}
+
+export async function apiRemove(id: ID) {
+  const ok = await tryFetchJson<{ ok: true }>(`${API}/${id}`, {
+    method: "DELETE",
+  });
+  if (ok) return true;
+  return remove(id);
+}
+
+export async function apiTogglePublished(id: ID) {
+  const item = getById(id);
+  const updated = await tryFetchJson<CaseItem>(`${API}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isPublished: item ? !item.isPublished : true }),
+  });
+  if (updated) return updated;
+  return togglePublished(id);
+}
+
+export async function apiToggleFeatured(id: ID) {
+  const item = getById(id);
+  const updated = await tryFetchJson<CaseItem>(`${API}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isFeatured: item ? !item.isFeatured : true }),
+  });
+  if (updated) return updated;
+  return toggleFeatured(id);
 }
 

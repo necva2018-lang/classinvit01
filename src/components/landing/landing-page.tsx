@@ -75,7 +75,6 @@ function getYoutubeEmbedUrl(url: string) {
 }
 
 function track(event: string, payload?: Record<string, unknown>) {
-  // eslint-disable-next-line no-console
   console.log(`[track] ${event}`, payload ?? {});
 }
 
@@ -574,10 +573,23 @@ export function LandingPage() {
 
   React.useEffect(() => {
     if (!hydrated) return;
-    setCourses(coursesStore.getAll().filter((c) => c.isPublished));
-    setCases(casesStore.getAll().filter((c) => c.isPublished));
-    setHeroMedia(mediaStore.getPublishedByType("hero")[0] ?? null);
-    setMedia(mediaStore.getAll().filter((m) => m.isPublished));
+    let cancelled = false;
+    (async () => {
+      const [courses, cases, heroList, mediaAll] = await Promise.all([
+        coursesStore.apiGetAll(),
+        casesStore.apiGetAll(),
+        mediaStore.apiGetPublishedByType("hero"),
+        mediaStore.apiGetAll(),
+      ]);
+      if (cancelled) return;
+      setCourses(courses.filter((c) => c.isPublished));
+      setCases(cases.filter((c) => c.isPublished));
+      setHeroMedia(heroList[0] ?? null);
+      setMedia(mediaAll.filter((m) => m.isPublished));
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [hydrated]);
 
   const [form, setForm] = React.useState({
@@ -1139,7 +1151,7 @@ export function LandingPage() {
             <div className="p-6 sm:p-8">
               <form
                 className="space-y-5"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   track("form_submit", {
                     course: form.course || primaryCourse?.title || "",
@@ -1153,7 +1165,7 @@ export function LandingPage() {
                     });
                     return;
                   }
-                  leadsStore.create({
+                  await leadsStore.apiCreate({
                     name: form.name.trim(),
                     phone: form.phone.trim(),
                     course: form.course || primaryCourse?.title || "未指定",

@@ -261,12 +261,14 @@ export default function AdminMediaNewPage() {
                       });
                       return;
                     }
-                    const created = mediaStore.create(draft);
-                    toast({
-                      title: "建立成功",
-                      description: `已建立影音「${created.title}」。`,
-                    });
-                    router.push(`/admin/media/${created.id}/edit`);
+                    void (async () => {
+                      const created = await mediaStore.apiCreate(draft);
+                      toast({
+                        title: "建立成功",
+                        description: `已建立影音「${created.title}」。`,
+                      });
+                      router.push(`/admin/media/${created.id}/edit`);
+                    })();
                   }}
                 >
                   建立影音

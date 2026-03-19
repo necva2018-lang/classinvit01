@@ -49,7 +49,10 @@ export default function AdminCoursesPage() {
   const [items, setItems] = React.useState<ReturnType<typeof coursesStore.getAll>>([]);
 
   const refresh = React.useCallback(() => {
-    setItems(coursesStore.getAll());
+    void (async () => {
+      const all = await coursesStore.apiGetAll();
+      setItems(all);
+    })();
   }, []);
 
   React.useEffect(() => {
@@ -183,8 +186,8 @@ export default function AdminCoursesPage() {
                         </span>
                         <Switch
                           checked={c.isPublished}
-                          onCheckedChange={() => {
-                            coursesStore.togglePublished(c.id);
+                          onCheckedChange={async () => {
+                            await coursesStore.apiTogglePublished(c.id);
                             refresh();
                             toast({
                               title: c.isPublished ? "已下架" : "已上架",
@@ -207,12 +210,14 @@ export default function AdminCoursesPage() {
                             `確定要刪除課程「${c.title}」嗎？此操作無法復原。`
                           );
                           if (!ok) return;
-                          coursesStore.remove(c.id);
-                          refresh();
-                          toast({
-                            title: "已刪除",
-                            description: `已刪除課程「${c.title}」。`,
-                          });
+                          void (async () => {
+                            await coursesStore.apiRemove(c.id);
+                            refresh();
+                            toast({
+                              title: "已刪除",
+                              description: `已刪除課程「${c.title}」。`,
+                            });
+                          })();
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -265,8 +270,8 @@ export default function AdminCoursesPage() {
                       <div className="flex items-center gap-3">
                         <Switch
                           checked={c.isPublished}
-                          onCheckedChange={() => {
-                            coursesStore.togglePublished(c.id);
+                          onCheckedChange={async () => {
+                            await coursesStore.apiTogglePublished(c.id);
                             refresh();
                             toast({
                               title: c.isPublished ? "已下架" : "已上架",
@@ -294,12 +299,14 @@ export default function AdminCoursesPage() {
                               `確定要刪除課程「${c.title}」嗎？此操作無法復原。`
                             );
                             if (!ok) return;
-                            coursesStore.remove(c.id);
-                            refresh();
-                            toast({
-                              title: "已刪除",
-                              description: `已刪除課程「${c.title}」。`,
-                            });
+                            void (async () => {
+                              await coursesStore.apiRemove(c.id);
+                              refresh();
+                              toast({
+                                title: "已刪除",
+                                description: `已刪除課程「${c.title}」。`,
+                              });
+                            })();
                           }}
                         >
                           刪除

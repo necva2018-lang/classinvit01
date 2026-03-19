@@ -95,12 +95,14 @@ export default function AdminCoursesNewPage() {
                   contents: linesToArray(contentsText),
                   ctaLabel: draft.ctaLabel || "免費預約｜確認補助與名額",
                 };
-                const created = coursesStore.create(payload);
-                toast({
-                  title: "建立成功",
-                  description: `已建立課程「${created.title}」。`,
-                });
-                router.push(`/admin/courses/${created.id}/edit`);
+                void (async () => {
+                  const created = await coursesStore.apiCreate(payload);
+                  toast({
+                    title: "建立成功",
+                    description: `已建立課程「${created.title}」。`,
+                  });
+                  router.push(`/admin/courses/${created.id}/edit`);
+                })();
               }}
             >
               <div className="grid gap-4 sm:grid-cols-2">

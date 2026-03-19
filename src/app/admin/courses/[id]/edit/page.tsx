@@ -113,18 +113,20 @@ export default function AdminCoursesEditPage() {
               className="grid gap-5"
               onSubmit={(e) => {
                 e.preventDefault();
-                const next = coursesStore.update(id, {
-                  ...item,
-                  audience: linesToArray(audienceText),
-                  highlights: linesToArray(highlightsText),
-                  contents: linesToArray(contentsText),
-                });
-                if (!next) return;
-                setItem(next);
-                toast({
-                  title: "已儲存",
-                  description: `課程「${next.title}」已更新。`,
-                });
+                void (async () => {
+                  const next = await coursesStore.apiUpdate(id, {
+                    ...item,
+                    audience: linesToArray(audienceText),
+                    highlights: linesToArray(highlightsText),
+                    contents: linesToArray(contentsText),
+                  });
+                  if (!next) return;
+                  setItem(next);
+                  toast({
+                    title: "已儲存",
+                    description: `課程「${next.title}」已更新。`,
+                  });
+                })();
               }}
             >
               <div className="grid gap-4 sm:grid-cols-2">
@@ -382,12 +384,14 @@ export default function AdminCoursesEditPage() {
                       `確定要刪除課程「${item.title}」嗎？此操作無法復原。`
                     );
                     if (!ok) return;
-                    coursesStore.remove(id);
-                    toast({
-                      title: "已刪除",
-                      description: `已刪除課程「${item.title}」。`,
-                    });
-                    router.push("/admin/courses");
+                    void (async () => {
+                      await coursesStore.apiRemove(id);
+                      toast({
+                        title: "已刪除",
+                        description: `已刪除課程「${item.title}」。`,
+                      });
+                      router.push("/admin/courses");
+                    })();
                   }}
                 >
                   刪除課程

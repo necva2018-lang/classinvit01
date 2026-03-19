@@ -54,7 +54,12 @@ export default function AdminMediaPage() {
   const [onlyPublished, setOnlyPublished] = React.useState(false);
   const [items, setItems] = React.useState<ReturnType<typeof mediaStore.getAll>>([]);
 
-  const refresh = React.useCallback(() => setItems(mediaStore.getAll()), []);
+  const refresh = React.useCallback(() => {
+    void (async () => {
+      const all = await mediaStore.apiGetAll();
+      setItems(all);
+    })();
+  }, []);
 
   React.useEffect(() => {
     if (!hydrated) return;
@@ -176,12 +181,14 @@ export default function AdminMediaPage() {
                       <Switch
                         checked={m.isPublished}
                         onCheckedChange={() => {
-                          mediaStore.togglePublished(m.id);
-                          refresh();
-                          toast({
-                            title: m.isPublished ? "已下架" : "已上架",
-                            description: `影音「${m.title}」狀態已更新。`,
-                          });
+                          void (async () => {
+                            await mediaStore.apiTogglePublished(m.id);
+                            refresh();
+                            toast({
+                              title: m.isPublished ? "已下架" : "已上架",
+                              description: `影音「${m.title}」狀態已更新。`,
+                            });
+                          })();
                         }}
                       />
                     </div>
@@ -200,12 +207,14 @@ export default function AdminMediaPage() {
                             `確定要刪除影音「${m.title}」嗎？此操作無法復原。`
                           );
                           if (!ok) return;
-                          mediaStore.remove(m.id);
-                          refresh();
-                          toast({
-                            title: "已刪除",
-                            description: `已刪除影音「${m.title}」。`,
-                          });
+                          void (async () => {
+                            await mediaStore.apiRemove(m.id);
+                            refresh();
+                            toast({
+                              title: "已刪除",
+                              description: `已刪除影音「${m.title}」。`,
+                            });
+                          })();
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -259,12 +268,14 @@ export default function AdminMediaPage() {
                         <Switch
                           checked={m.isPublished}
                           onCheckedChange={() => {
-                            mediaStore.togglePublished(m.id);
-                            refresh();
-                            toast({
-                              title: m.isPublished ? "已下架" : "已上架",
-                              description: `影音「${m.title}」狀態已更新。`,
-                            });
+                            void (async () => {
+                              await mediaStore.apiTogglePublished(m.id);
+                              refresh();
+                              toast({
+                                title: m.isPublished ? "已下架" : "已上架",
+                                description: `影音「${m.title}」狀態已更新。`,
+                              });
+                            })();
                           }}
                         />
                         <Badge variant={m.isPublished ? "default" : "outline"}>
@@ -287,12 +298,14 @@ export default function AdminMediaPage() {
                               `確定要刪除影音「${m.title}」嗎？此操作無法復原。`
                             );
                             if (!ok) return;
-                            mediaStore.remove(m.id);
-                            refresh();
-                            toast({
-                              title: "已刪除",
-                              description: `已刪除影音「${m.title}」。`,
-                            });
+                            void (async () => {
+                              await mediaStore.apiRemove(m.id);
+                              refresh();
+                              toast({
+                                title: "已刪除",
+                                description: `已刪除影音「${m.title}」。`,
+                              });
+                            })();
                           }}
                         >
                           刪除

@@ -40,7 +40,10 @@ export default function AdminCasesPage() {
   );
 
   const refresh = React.useCallback(() => {
-    setItems(casesStore.getAll());
+    void (async () => {
+      const all = await casesStore.apiGetAll();
+      setItems(all);
+    })();
   }, []);
 
   React.useEffect(() => {
@@ -180,8 +183,8 @@ export default function AdminCasesPage() {
                         </span>
                         <Switch
                           checked={c.isPublished}
-                          onCheckedChange={() => {
-                            casesStore.togglePublished(c.id);
+                          onCheckedChange={async () => {
+                            await casesStore.apiTogglePublished(c.id);
                             refresh();
                             toast({
                               title: c.isPublished ? "已下架" : "已上架",
@@ -196,8 +199,8 @@ export default function AdminCasesPage() {
                         </span>
                         <Switch
                           checked={c.isFeatured}
-                          onCheckedChange={() => {
-                            casesStore.toggleFeatured(c.id);
+                          onCheckedChange={async () => {
+                            await casesStore.apiToggleFeatured(c.id);
                             refresh();
                             toast({
                               title: c.isFeatured ? "已取消精選" : "已設為精選",
@@ -222,12 +225,14 @@ export default function AdminCasesPage() {
                             `確定要刪除案例「${c.name}｜${c.title}」嗎？此操作無法復原。`
                           );
                           if (!ok) return;
-                          casesStore.remove(c.id);
-                          refresh();
-                          toast({
-                            title: "已刪除",
-                            description: `已刪除案例「${c.name}」。`,
-                          });
+                          void (async () => {
+                            await casesStore.apiRemove(c.id);
+                            refresh();
+                            toast({
+                              title: "已刪除",
+                              description: `已刪除案例「${c.name}」。`,
+                            });
+                          })();
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -279,8 +284,8 @@ export default function AdminCasesPage() {
                       <div className="flex items-center gap-3">
                         <Switch
                           checked={c.isFeatured}
-                          onCheckedChange={() => {
-                            casesStore.toggleFeatured(c.id);
+                          onCheckedChange={async () => {
+                            await casesStore.apiToggleFeatured(c.id);
                             refresh();
                             toast({
                               title: c.isFeatured ? "已取消精選" : "已設為精選",
@@ -297,8 +302,8 @@ export default function AdminCasesPage() {
                       <div className="flex items-center gap-3">
                         <Switch
                           checked={c.isPublished}
-                          onCheckedChange={() => {
-                            casesStore.togglePublished(c.id);
+                          onCheckedChange={async () => {
+                            await casesStore.apiTogglePublished(c.id);
                             refresh();
                             toast({
                               title: c.isPublished ? "已下架" : "已上架",
@@ -331,12 +336,14 @@ export default function AdminCasesPage() {
                               `確定要刪除案例「${c.name}｜${c.title}」嗎？此操作無法復原。`
                             );
                             if (!ok) return;
-                            casesStore.remove(c.id);
-                            refresh();
-                            toast({
-                              title: "已刪除",
-                              description: `已刪除案例「${c.name}」。`,
-                            });
+                            void (async () => {
+                              await casesStore.apiRemove(c.id);
+                              refresh();
+                              toast({
+                                title: "已刪除",
+                                description: `已刪除案例「${c.name}」。`,
+                              });
+                            })();
                           }}
                         >
                           刪除
