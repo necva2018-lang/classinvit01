@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { isPhoneLikelyValid } from "@/lib/lead-validation";
-import * as leadsApi from "@/lib/leads";
+import * as leadsApi from "@/lib/leads-http";
 import { track } from "@/components/landing/lead-form-actions";
 
 import { Button } from "@/components/ui/button";

@@ -1,87 +1,83 @@
-/**
- * Leads 客戶端資料層：僅透過 `/api/leads` 與後端通訊，不再寫入 localStorage。
- * Prisma 存取請使用 `leads-repository.ts`（僅 Server）。
- */
+import "server-only";
+
+import type { Prisma } from "@prisma/client";
+
+import { prisma } from "@/lib/prisma";
 import type { Lead } from "@/types";
-import { isBrowser, safeJsonResponse } from "@/lib/storage";
 
-const API = "/api/leads";
-
-export type SubmitLeadPayload = {
+export type CreateLeadInput = {
   name: string;
   phone: string;
-  course?: string;
-  contactTime?: string;
+  course?: string | null;
+  contactTime?: string | null;
 };
 
-export type SubmitLeadResult =
-  | { ok: true; lead: Lead }
-  | { ok: false; error: string; status?: number };
-
-function buildQuery(params: { q?: string; course?: string }) {
-  const sp = new URLSearchParams();
-  if (params.q?.trim()) sp.set("q", params.q.trim());
-  if (params.course?.trim()) sp.set("course", params.course.trim());
-  const qs = sp.toString();
-  return qs ? `${API}?${qs}` : API;
+export async function createLead(input: CreateLeadInput) {
+  return prisma.lead.create({
+    data: {
+      name: input.name.trim(),
+      phone: input.phone.trim(),
+      course:
+        input.course != null && String(input.course).trim() !== ""
+          ? String(input.course).trim()
+          : null,
+      contactTime:
+        input.contactTime != null && String(input.contactTime).trim() !== ""
+          ? String(input.contactTime).trim()
+          : null,
+    },
+  });
 }
 
-/** 後台／儀表板：從 API 讀取名單（支援搜尋、課程關鍵字） */
-export async function apiGetAll(params?: {
+export type ListLeadsParams = {
   q?: string;
   course?: string;
-}): Promise<Lead[]> {
-  if (!isBrowser()) return [];
-  try {
-    const url = buildQuery(params ?? {});
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await safeJsonResponse<Lead[]>(res);
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
+  take?: number;
+};
+
+export async function getLeads(params: ListLeadsParams = {}) {
+  const take = params.take ?? 500;
+  const where: Prisma.LeadWhereInput = {};
+
+  const q = params.q?.trim();
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: "insensitive" } },
+      { phone: { contains: q, mode: "insensitive" } },
+      { course: { contains: q, mode: "insensitive" } },
+    ];
   }
+
+  const course = params.course?.trim();
+  if (course) {
+    where.course = { contains: course, mode: "insensitive" };
+  }
+
+  return prisma.lead.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take,
+  });
 }
 
-/** 前台表單：建立名單（僅 PostgreSQL，失敗不回退 localStorage） */
-export async function apiCreate(
-  input: SubmitLeadPayload
-): Promise<SubmitLeadResult> {
-  if (!isBrowser()) {
-    return { ok: false, error: "無法在伺服器端送出表單" };
-  }
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: input.name,
-        phone: input.phone,
-        course: input.course ?? "",
-        contactTime: input.contactTime ?? "",
-      }),
-    });
+export function mapLeadToViewModel(row: {
+  id: string;
+  name: string;
+  phone: string;
+  course: string | null;
+  contactTime: string | null;
+  createdAt: Date;
+}): Lead {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    course: row.course ?? "",
+    contactTime: row.contactTime ?? "",
+    createdAt: row.createdAt.toISOString(),
+  };
+}
 
-    const json = (await res.json().catch(() => ({}))) as unknown;
-
-    if (!res.ok) {
-      const msg =
-        typeof json === "object" &&
-        json !== null &&
-        "error" in json &&
-        typeof (json as { error: string }).error === "string"
-          ? (json as { error: string }).error
-          : `送出失敗（${res.status}）`;
-      return { ok: false, error: msg, status: res.status };
-    }
-
-    const lead = json as Lead;
-    if (!lead?.id || !lead?.name) {
-      return { ok: false, error: "回傳資料異常" };
-    }
-    return { ok: true, lead };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "網路錯誤";
-    return { ok: false, error: msg };
-  }
+export async function searchLeads(q: string, courseFilter?: string) {
+  return getLeads({ q, course: courseFilter });
 }

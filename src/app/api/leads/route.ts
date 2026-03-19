@@ -6,7 +6,7 @@ import {
   createLead,
   getLeads,
   mapLeadToViewModel,
-} from "@/lib/leads-repository";
+} from "@/lib/leads";
 
 const LeadCreateSchema = z.object({
   name: z.string().trim().min(1, "請填寫姓名"),
@@ -19,7 +19,20 @@ const LeadCreateSchema = z.object({
   contactTime: z.string().optional().default(""),
 });
 
+const DB_CONFIG_ERROR =
+  "資料庫未設定：缺少 DATABASE_URL。請在 Zeabur 的 Next.js Web Service「環境變數」加入與 PostgreSQL 相同的連線字串（含使用者、密碼、?sslmode=require），勿使用 NEXT_PUBLIC_ 前綴。";
+
+function assertDatabaseUrl(): NextResponse | null {
+  if (!process.env.DATABASE_URL?.trim()) {
+    return NextResponse.json({ error: DB_CONFIG_ERROR }, { status: 503 });
+  }
+  return null;
+}
+
 export async function GET(req: Request) {
+  const missing = assertDatabaseUrl();
+  if (missing) return missing;
+
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q") ?? undefined;
@@ -34,6 +47,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const missing = assertDatabaseUrl();
+  if (missing) return missing;
+
   let body: unknown;
   try {
     body = await req.json();

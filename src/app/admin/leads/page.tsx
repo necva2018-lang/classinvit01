@@ -3,7 +3,7 @@
 import * as React from "react";
 import { RefreshCw, Search, Users } from "lucide-react";
 
-import * as leadsStore from "@/lib/leads";
+import * as leadsStore from "@/lib/leads-http";
 import type { Lead } from "@/types";
 
 import { Badge } from "@/components/ui/badge";

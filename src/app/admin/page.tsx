@@ -15,7 +15,7 @@ import {
 import * as coursesStore from "@/lib/courses";
 import * as casesStore from "@/lib/cases";
 import * as mediaStore from "@/lib/media";
-import * as leadsStore from "@/lib/leads";
+import * as leadsStore from "@/lib/leads-http";
 import type { Lead } from "@/types";
 
 import { Badge } from "@/components/ui/badge";
@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
         <div className="mx-auto max-w-6xl px-4 py-4">
           <h1 className="text-lg font-semibold tracking-tight">儀表板</h1>
           <p className="text-sm text-muted-foreground">
-            快速檢視內容與最新名單（API 或本地備援）
+            快速檢視內容與最新名單（Leads 來自 PostgreSQL /api/leads）
           </p>
         </div>
       </div>
@@ -148,7 +148,7 @@ export default function AdminDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
-                {s.hint ?? "課程／案例／影音可為 API+DB 或本地備援；名單為 PostgreSQL"}
+                {s.hint ?? "課程／案例／影音可為 API+DB 或本地備援；諮詢名單僅 PostgreSQL"}
               </CardContent>
             </Card>
           ))}
