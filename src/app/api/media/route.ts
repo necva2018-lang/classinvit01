@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { courseCategorySchema } from "@/lib/course-categories";
 import { prisma } from "@/lib/db";
 import type { MediaType } from "@/types";
 
@@ -10,6 +11,7 @@ const MediaUpsertSchema = z.object({
   videoUrl: z.string().min(1),
   thumbnailUrl: z.string().min(1),
   type: z.enum(["hero", "course", "case", "promo"]),
+  category: courseCategorySchema.nullable().optional(),
   relatedCourseId: z.string().optional(),
   relatedCaseId: z.string().optional(),
   isPublished: z.boolean().default(false),

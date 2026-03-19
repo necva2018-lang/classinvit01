@@ -43,33 +43,31 @@ export default function AdminCasesEditPage() {
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-muted/20">
-        <div className="mx-auto max-w-6xl px-4 py-10">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">找不到案例</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                可能已被刪除，或資料尚未在此瀏覽器建立。
-              </p>
-              <Button asChild className="rounded-xl">
-                <Link href="/admin/cases">回案例列表</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">找不到案例</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              可能已被刪除，或資料尚未在此瀏覽器建立。
+            </p>
+            <Button asChild className="rounded-xl">
+              <Link href="/admin/cases">回案例列表</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="min-w-0 space-y-1">
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-sm font-semibold">編輯案例</p>
+              <h1 className="text-lg font-semibold tracking-tight">編輯案例</h1>
               {item.isFeatured ? (
                 <Badge variant="secondary">精選</Badge>
               ) : (
@@ -79,15 +77,15 @@ export default function AdminCasesEditPage() {
                 {item.isPublished ? "已上架" : "未上架"}
               </Badge>
             </div>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="truncate text-sm text-muted-foreground">
               {item.name}｜{item.title}
             </p>
           </div>
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline" className="shrink-0 rounded-xl">
             <Link href="/admin/cases">回列表</Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
@@ -324,7 +322,7 @@ export default function AdminCasesEditPage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

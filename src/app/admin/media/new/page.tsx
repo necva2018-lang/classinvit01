@@ -4,8 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import type { MediaItem, MediaType } from "@/types";
+import type { CourseCategory, MediaItem, MediaType } from "@/types";
 import * as mediaStore from "@/lib/media";
+import {
+  COURSE_CATEGORY_ORDER,
+  getCourseCategoryLabel,
+} from "@/lib/course-categories";
 import * as coursesStore from "@/lib/courses";
 import * as casesStore from "@/lib/cases";
 
@@ -48,6 +52,7 @@ export default function AdminMediaNewPage() {
     videoUrl: "",
     thumbnailUrl: "",
     type: "promo",
+    category: undefined,
     relatedCourseId: undefined,
     relatedCaseId: undefined,
     isPublished: true,
@@ -58,18 +63,18 @@ export default function AdminMediaNewPage() {
   const showCase = draft.type === "case";
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">新增影音</p>
-            <p className="text-xs text-muted-foreground">可指定顯示位置與關聯</p>
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">新增影音</h1>
+            <p className="text-sm text-muted-foreground">可指定顯示位置與關聯</p>
           </div>
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline" className="shrink-0 rounded-xl">
             <Link href="/admin/media">回列表</Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
@@ -116,6 +121,35 @@ export default function AdminMediaNewPage() {
                     }
                   />
                 </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>課程分類（可選）</Label>
+                <p className="text-xs text-muted-foreground">
+                  設定後首頁影音可依分類 Tab 對應顯示；未設定時可由關聯課程推斷。
+                </p>
+                <Select
+                  value={draft.category ?? "none"}
+                  onValueChange={(v) =>
+                    setDraft((d) => ({
+                      ...d,
+                      category:
+                        v === "none" ? undefined : (v as CourseCategory),
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="不指定" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">不指定</SelectItem>
+                    {COURSE_CATEGORY_ORDER.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {getCourseCategoryLabel(cat)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-2">
@@ -277,6 +311,11 @@ export default function AdminMediaNewPage() {
                   <p className="font-medium text-foreground">目前設定</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Badge variant="secondary">{MEDIA_TYPE_LABEL[draft.type]}</Badge>
+                    {draft.category != null ? (
+                      <Badge variant="outline">
+                        {getCourseCategoryLabel(draft.category)}
+                      </Badge>
+                    ) : null}
                     <Badge variant={draft.isPublished ? "default" : "outline"}>
                       {draft.isPublished ? "已上架" : "未上架"}
                     </Badge>
@@ -290,7 +329,7 @@ export default function AdminMediaNewPage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

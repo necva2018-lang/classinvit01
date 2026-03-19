@@ -73,23 +73,23 @@ export default function AdminCoursesPage() {
     });
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">課程管理</p>
-            <p className="text-xs text-muted-foreground">
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">課程管理</h1>
+            <p className="text-sm text-muted-foreground">
               手機卡片式列表｜可依分類篩選
             </p>
           </div>
-          <Button asChild className="rounded-xl">
+          <Button asChild className="shrink-0 rounded-xl">
             <Link href="/admin/courses/new">
               <Plus className="h-4 w-4" />
               新增課程
             </Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-6">
         <Card>
@@ -327,7 +327,7 @@ export default function AdminCoursesPage() {
           )}
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

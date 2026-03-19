@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { courseCategorySchema, isCourseCategory } from "@/lib/course-categories";
 import { prisma } from "@/lib/db";
-import type { CourseCategory } from "@/types";
 
 const CourseUpsertSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
-  category: z.enum(["unemployed_subsidy", "employed_subsidy", "self_paid"]),
+  category: courseCategorySchema,
   subtitle: z.string().default(""),
   shortDescription: z.string().default(""),
   description: z.string().default(""),
@@ -27,12 +27,14 @@ const CourseUpsertSchema = z.object({
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category") as CourseCategory | null;
+  const rawCat = searchParams.get("category");
+  const category =
+    rawCat != null && isCourseCategory(rawCat) ? rawCat : undefined;
   const q = (searchParams.get("q") ?? "").trim();
 
   const items = await prisma.course.findMany({
     where: {
-      ...(category ? { category } : {}),
+      ...(category !== undefined ? { category } : {}),
       ...(q
         ? {
             OR: [

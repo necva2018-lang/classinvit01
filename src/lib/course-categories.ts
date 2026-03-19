@@ -1,16 +1,41 @@
+import { z } from "zod";
+
 import type { CourseCategory } from "@/types";
 
-export const COURSE_CATEGORIES: CourseCategory[] = [
+/**
+ * 全站課程分類唯一順序來源（Tabs、後台篩選、API 驗證需與 Prisma `CourseCategory` 一致）。
+ */
+export const COURSE_CATEGORY_ORDER = [
   "unemployed_subsidy",
   "employed_subsidy",
   "self_paid",
-];
+] as const satisfies readonly CourseCategory[];
+
+export const COURSE_CATEGORIES: CourseCategory[] = [...COURSE_CATEGORY_ORDER];
+
+const CATEGORY_SET = new Set<string>(COURSE_CATEGORY_ORDER);
+
+export function isCourseCategory(value: unknown): value is CourseCategory {
+  return typeof value === "string" && CATEGORY_SET.has(value);
+}
+
+/** API / 表單用 Zod schema，與 `COURSE_CATEGORY_ORDER` 單一來源同步 */
+export const courseCategorySchema = z.enum(COURSE_CATEGORY_ORDER);
 
 export const COURSE_CATEGORY_LABEL: Record<CourseCategory, string> = {
   unemployed_subsidy: "待業者補助",
   employed_subsidy: "在職課程",
   self_paid: "自費課程",
 };
+
+/** 顯示名稱對照（Badge、Select、Tab 標籤） */
+export function getCourseCategoryDisplayName(category: CourseCategory) {
+  return COURSE_CATEGORY_LABEL[category];
+}
+
+export function getCourseCategoryLabel(category: CourseCategory) {
+  return getCourseCategoryDisplayName(category);
+}
 
 export const COURSE_CATEGORY_MARKETING: Record<
   CourseCategory,
@@ -44,8 +69,3 @@ export const COURSE_CATEGORY_MARKETING: Record<
     cardSecondaryCtaLabel: "先看適合我的程度",
   },
 };
-
-export function getCourseCategoryLabel(category: CourseCategory) {
-  return COURSE_CATEGORY_LABEL[category];
-}
-

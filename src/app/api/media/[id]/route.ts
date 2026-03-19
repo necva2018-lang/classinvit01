@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { courseCategorySchema } from "@/lib/course-categories";
 import { prisma } from "@/lib/db";
 
 const MediaPatchSchema = z.object({
@@ -9,6 +10,7 @@ const MediaPatchSchema = z.object({
   videoUrl: z.string().min(1).optional(),
   thumbnailUrl: z.string().min(1).optional(),
   type: z.enum(["hero", "course", "case", "promo"]).optional(),
+  category: courseCategorySchema.nullable().optional(),
   relatedCourseId: z.string().optional().nullable(),
   relatedCaseId: z.string().optional().nullable(),
   isPublished: z.boolean().optional(),

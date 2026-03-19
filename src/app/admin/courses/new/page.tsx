@@ -64,18 +64,18 @@ export default function AdminCoursesNewPage() {
   const [contentsText, setContentsText] = React.useState("");
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">新增課程</p>
-            <p className="text-xs text-muted-foreground">包含分類設定</p>
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">新增課程</h1>
+            <p className="text-sm text-muted-foreground">包含分類設定</p>
           </div>
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline" className="shrink-0 rounded-xl">
             <Link href="/admin/courses">回列表</Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
@@ -369,7 +369,7 @@ export default function AdminCoursesNewPage() {
           </Card>
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

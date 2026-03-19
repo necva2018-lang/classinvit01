@@ -6,6 +6,7 @@ import { Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 
 import * as casesStore from "@/lib/cases";
 
+import { AdminThumb } from "@/components/admin/admin-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,23 +66,23 @@ export default function AdminCasesPage() {
     });
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">案例管理</p>
-            <p className="text-xs text-muted-foreground">
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">案例管理</h1>
+            <p className="text-sm text-muted-foreground">
               桌機表格｜手機卡片｜支援精選/上架切換
             </p>
           </div>
-          <Button asChild className="rounded-xl">
+          <Button asChild className="shrink-0 rounded-xl">
             <Link href="/admin/cases/new">
               <Plus className="h-4 w-4" />
               新增案例
             </Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-6">
         <Card>
@@ -140,7 +141,12 @@ export default function AdminCasesPage() {
                 <Card key={c.id} className="overflow-hidden">
                   <CardHeader className="space-y-2 pb-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
+                      <AdminThumb
+                        src={c.image}
+                        alt=""
+                        className="h-14 w-14 rounded-xl"
+                      />
+                      <div className="min-w-0 flex-1 space-y-1">
                         <p className="truncate text-sm font-semibold">
                           {c.name}｜{c.title}
                         </p>
@@ -260,6 +266,7 @@ export default function AdminCasesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-14">圖</TableHead>
                   <TableHead>人物 / 標題</TableHead>
                   <TableHead>精選</TableHead>
                   <TableHead>上架</TableHead>
@@ -270,6 +277,13 @@ export default function AdminCasesPage() {
               <TableBody>
                 {filtered.map((c) => (
                   <TableRow key={c.id}>
+                    <TableCell className="align-middle">
+                      <AdminThumb
+                        src={c.image}
+                        alt=""
+                        className="h-11 w-11 rounded-lg"
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <p className="text-sm font-semibold">
@@ -355,7 +369,7 @@ export default function AdminCasesPage() {
                 {filtered.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="py-10 text-center text-sm text-muted-foreground"
                     >
                       沒有符合條件的案例。
@@ -367,7 +381,7 @@ export default function AdminCasesPage() {
           )}
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

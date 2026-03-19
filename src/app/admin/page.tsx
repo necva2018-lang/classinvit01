@@ -103,27 +103,17 @@ export default function AdminDashboardPage() {
   }, [hydrated]);
 
   return (
-    <div className="min-h-[calc(100vh-0px)] bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <LayoutDashboard className="h-5 w-5" />
-            </div>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold">後台管理</p>
-              <p className="text-xs text-muted-foreground">行動版卡片｜桌機可擴充表格</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
-              <Link href="/">回前台預覽</Link>
-            </Button>
-          </div>
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto max-w-6xl px-4 py-4">
+          <h1 className="text-lg font-semibold tracking-tight">儀表板</h1>
+          <p className="text-sm text-muted-foreground">
+            快速檢視內容與最新名單（API 或本地備援）
+          </p>
         </div>
-      </header>
+      </div>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {stats.map((s) => (
             <Card
@@ -232,27 +222,32 @@ export default function AdminDashboardPage() {
                 我會接著把 Courses / Cases / Media 做成完整 CRUD。行動版會優先卡片式，桌機提供表格＋搜尋／篩選。
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-3">
-              <Button asChild variant="outline" className="justify-between">
+            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Button asChild variant="outline" className="justify-between rounded-xl">
                 <Link href="/admin/courses">
                   課程管理 <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="justify-between">
+              <Button asChild variant="outline" className="justify-between rounded-xl">
                 <Link href="/admin/cases">
                   案例管理 <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="justify-between">
+              <Button asChild variant="outline" className="justify-between rounded-xl">
                 <Link href="/admin/media">
                   影音管理 <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-between rounded-xl">
+                <Link href="/admin/leads">
+                  諮詢名單 <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
         </section>
       </main>
-    </div>
+    </>
   );
 }
 

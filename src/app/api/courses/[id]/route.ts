@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { courseCategorySchema } from "@/lib/course-categories";
 import { prisma } from "@/lib/db";
 
 const CoursePatchSchema = z.object({
   title: z.string().min(1).optional(),
   slug: z.string().min(1).optional(),
-  category: z
-    .enum(["unemployed_subsidy", "employed_subsidy", "self_paid"])
-    .optional(),
+  category: courseCategorySchema.optional(),
   subtitle: z.string().optional(),
   shortDescription: z.string().optional(),
   description: z.string().optional(),

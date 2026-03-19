@@ -6,7 +6,12 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 import type { MediaType } from "@/types";
 import * as mediaStore from "@/lib/media";
+import {
+  COURSE_CATEGORY_ORDER,
+  getCourseCategoryLabel,
+} from "@/lib/course-categories";
 
+import { AdminThumb } from "@/components/admin/admin-thumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,31 +77,35 @@ export default function AdminMediaPage() {
     .filter((m) => {
       const s = q.trim().toLowerCase();
       if (!s) return true;
+      const catLabel =
+        m.category != null ? getCourseCategoryLabel(m.category).toLowerCase() : "";
       return (
         m.title.toLowerCase().includes(s) ||
         m.description.toLowerCase().includes(s) ||
-        m.videoUrl.toLowerCase().includes(s)
+        m.videoUrl.toLowerCase().includes(s) ||
+        (m.category != null && catLabel.includes(s)) ||
+        (m.category != null && m.category.toLowerCase().includes(s))
       );
     });
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">影音管理</p>
-            <p className="text-xs text-muted-foreground">
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight">影音管理</h1>
+            <p className="text-sm text-muted-foreground">
               桌機表格｜手機卡片｜支援上架切換
             </p>
           </div>
-          <Button asChild className="rounded-xl">
+          <Button asChild className="shrink-0 rounded-xl">
             <Link href="/admin/media/new">
               <Plus className="h-4 w-4" />
               新增影音
             </Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-6">
         <Card>
@@ -160,17 +169,36 @@ export default function AdminMediaPage() {
                 <Card key={m.id} className="overflow-hidden">
                   <CardHeader className="space-y-2 pb-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
+                      <AdminThumb
+                        src={m.thumbnailUrl}
+                        alt=""
+                        className="h-16 w-28 rounded-lg object-cover"
+                      />
+                      <div className="min-w-0 flex-1 space-y-1">
                         <p className="truncate text-sm font-semibold">{m.title}</p>
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {m.description}
                         </p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Badge variant="secondary">{MEDIA_TYPE_LABEL[m.type]}</Badge>
+                          {m.category != null ? (
+                            <Badge variant="outline">
+                              {getCourseCategoryLabel(m.category)}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="font-normal">
+                              未指定分類
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        <Badge variant="secondary">{MEDIA_TYPE_LABEL[m.type]}</Badge>
                         <Badge variant={m.isPublished ? "default" : "outline"}>
                           {m.isPublished ? "已上架" : "未上架"}
                         </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          排序 {m.sortOrder}
+                        </span>
                       </div>
                     </div>
                   </CardHeader>
@@ -242,8 +270,10 @@ export default function AdminMediaPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[7rem]">縮圖</TableHead>
                   <TableHead>標題</TableHead>
                   <TableHead>類型</TableHead>
+                  <TableHead>分類</TableHead>
                   <TableHead>上架</TableHead>
                   <TableHead>排序</TableHead>
                   <TableHead className="text-right">操作</TableHead>
@@ -252,6 +282,13 @@ export default function AdminMediaPage() {
               <TableBody>
                 {filtered.map((m) => (
                   <TableRow key={m.id}>
+                    <TableCell className="align-middle">
+                      <AdminThumb
+                        src={m.thumbnailUrl}
+                        alt=""
+                        className="h-11 w-20 rounded-md"
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <p className="text-sm font-semibold">{m.title}</p>
@@ -262,6 +299,15 @@ export default function AdminMediaPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{MEDIA_TYPE_LABEL[m.type]}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {m.category != null ? (
+                        <Badge variant="outline" className="font-normal">
+                          {getCourseCategoryLabel(m.category)}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -316,7 +362,7 @@ export default function AdminMediaPage() {
                 ))}
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                       沒有符合條件的影音。
                     </TableCell>
                   </TableRow>
@@ -326,7 +372,7 @@ export default function AdminMediaPage() {
           )}
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

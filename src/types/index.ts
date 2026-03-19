@@ -2,6 +2,7 @@ export type ID = string;
 
 export type MediaType = "hero" | "course" | "case" | "promo";
 
+/** 與 Prisma `CourseCategory` enum、`COURSE_CATEGORY_ORDER` 保持一致 */
 export type CourseCategory =
   | "unemployed_subsidy"
   | "employed_subsidy"
@@ -56,6 +57,8 @@ export type MediaItem = {
   videoUrl: string;
   thumbnailUrl: string;
   type: MediaType;
+  /** 首頁分類影音用；未設定時由關聯課程推斷 */
+  category?: CourseCategory | null;
   relatedCourseId?: ID;
   relatedCaseId?: ID;
   isPublished: boolean;

@@ -3,14 +3,12 @@
 import * as React from "react";
 import Image from "next/image";
 import {
-  ArrowRight,
   Bot,
   Clock,
   Cpu,
   Gift,
   GraduationCap,
   Play,
-  Quote,
   ShieldCheck,
   Sparkles,
   TrendingUp,
@@ -23,11 +21,19 @@ import * as casesStore from "@/lib/cases";
 import * as mediaStore from "@/lib/media";
 import * as leadsStore from "@/lib/leads";
 import { cn } from "@/lib/utils";
+import { getYoutubeEmbedUrl } from "@/lib/video-embed";
+
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { CoursePlanSection } from "@/components/landing/course-plan-section";
+import { FeaturedCasesSection } from "@/components/landing/featured-cases-section";
+import { FaqSection } from "@/components/landing/faq-section";
+import { VideoSection } from "@/components/landing/video-section";
 import {
-  COURSE_CATEGORIES,
-  COURSE_CATEGORY_MARKETING,
-  getCourseCategoryLabel,
-} from "@/lib/course-categories";
+  ScrollToFormButton,
+  SectionCtaBar,
+  scrollToLeadForm,
+  track,
+} from "@/components/landing/lead-form-actions";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,67 +54,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 
 function useHydrated() {
   const [hydrated, setHydrated] = React.useState(false);
   React.useEffect(() => setHydrated(true), []);
   return hydrated;
-}
-
-function getYoutubeEmbedUrl(url: string) {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("youtube.com")) {
-      const id = u.searchParams.get("v");
-      if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
-    }
-    if (u.hostname === "youtu.be") {
-      const id = u.pathname.replace("/", "");
-      if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
-    }
-    return url;
-  } catch {
-    return url;
-  }
-}
-
-function track(event: string, payload?: Record<string, unknown>) {
-  console.log(`[track] ${event}`, payload ?? {});
-}
-
-/** 平滑捲動到表單，並帶 CTA 追蹤 */
-function scrollToLeadForm(placement: string, label: string) {
-  track("cta_click", { placement, label });
-  document
-    .getElementById("lead-form")
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function ScrollToFormButton({
-  className,
-  label,
-  placement,
-  size = "lg",
-  variant = "default",
-}: {
-  className?: string;
-  label: string;
-  placement: string;
-  size?: React.ComponentProps<typeof Button>["size"];
-  variant?: React.ComponentProps<typeof Button>["variant"];
-}) {
-  return (
-    <Button
-      className={className}
-      size={size}
-      variant={variant}
-      onClick={() => scrollToLeadForm(placement, label)}
-    >
-      {label}
-    </Button>
-  );
 }
 
 const HERO_BADGES: { label: string; icon?: React.ReactNode }[] = [
@@ -118,322 +69,6 @@ const HERO_BADGES: { label: string; icon?: React.ReactNode }[] = [
   { label: "專業設備教室", icon: <Cpu className="h-3 w-3" /> },
   { label: "AI 工具應用", icon: <Bot className="h-3 w-3" /> },
 ];
-
-function FeaturedCasesStories({
-  items,
-  onCta,
-}: {
-  items: CaseItem[];
-  onCta: (label: string) => void;
-}) {
-  const featured = items
-    .filter((c) => c.isPublished && c.isFeatured)
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .slice(0, 10);
-
-  if (featured.length === 0) return null;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
-            精選學員故事
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            看得見的轉變：原本狀態 → 成果 → 真實心得。
-          </p>
-        </div>
-        <ScrollToFormButton
-          label="我也想確認適合的路線"
-          placement="cases_section_header"
-          className="hidden h-10 sm:inline-flex"
-          size="default"
-        />
-      </div>
-
-      <div
-        className={cn(
-          "relative -mx-4 px-4",
-          "overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        )}
-      >
-        <div className="flex gap-4 snap-x snap-mandatory">
-          {featured.map((c) => (
-            <Card
-              key={c.id}
-              className={cn(
-                "w-[88%] shrink-0 snap-start overflow-hidden border shadow-sm sm:w-[520px]",
-                "bg-gradient-to-br from-background via-background to-muted/30"
-              )}
-            >
-              <CardHeader className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary">{c.name}</Badge>
-                      <Badge variant="outline">真實案例</Badge>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold leading-snug">
-                      {c.title}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {c.summary}
-                    </p>
-                  </div>
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border bg-muted">
-                    <Image
-                      src={c.image}
-                      alt={c.name}
-                      fill
-                      className="object-cover"
-                      sizes="56px"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2 rounded-xl border bg-background/60 p-3 text-sm">
-                  <div className="grid gap-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      原本狀態
-                    </p>
-                    <p className="font-medium">{c.beforeStatus}</p>
-                  </div>
-                  <div className="grid gap-1">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      轉變後成果
-                    </p>
-                    <p className="font-medium">{c.afterStatus}</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-xl border bg-muted/25 p-4">
-                  <div className="flex items-start gap-2">
-                    <Quote className="mt-0.5 h-4 w-4 text-primary" />
-                    <p className="text-sm leading-relaxed">
-                      <span className="font-medium">「</span>
-                      {c.quote}
-                      <span className="font-medium">」</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {c.tags.slice(0, 4).map((t) => (
-                    <Badge key={t} variant="outline">
-                      {t}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-3 border-t bg-muted/20 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <Button
-                  variant="outline"
-                  className="w-full rounded-xl sm:w-auto"
-                  onClick={() => onCta("我想了解更多案例與課程")}
-                >
-                  了解我的可行路線
-                </Button>
-                <Button
-                  className="w-full rounded-xl sm:w-auto"
-                  onClick={() => onCta("免費預約｜我也想達成類似成果")}
-                >
-                  免費預約諮詢
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      <div className="sm:hidden">
-        <ScrollToFormButton
-          label="我也想確認適合的路線"
-          placement="cases_section_footer_mobile"
-          className="h-12 w-full rounded-xl text-base"
-        />
-      </div>
-    </div>
-  );
-}
-
-function MediaPromoSection({
-  courses,
-  media,
-}: {
-  courses: Course[];
-  media: MediaItem[];
-}) {
-  const byCourseId = React.useMemo(() => {
-    const map = new Map<string, Course>();
-    for (const c of courses) map.set(c.id, c);
-    return map;
-  }, [courses]);
-
-  const [open, setOpen] = React.useState(false);
-  const [active, setActive] = React.useState<MediaItem | null>(null);
-
-  const openMedia = (m: MediaItem, placement: string) => {
-    track("video_promo_open", { placement, id: m.id, type: m.type });
-    setActive(m);
-    setOpen(true);
-  };
-
-  const getForCategory = (cat: Course["category"]) => {
-    const list = media
-      .filter((m) => m.isPublished)
-      .filter((m) => m.type === "promo" || m.type === "course")
-      .filter((m) => {
-        if (!m.relatedCourseId) return true; // 泛用 promo
-        const c = byCourseId.get(m.relatedCourseId);
-        return c?.category === cat;
-      })
-      .sort((a, b) => a.sortOrder - b.sortOrder);
-
-    // 讓「泛用 promo」永遠先出現
-    const generic = list.filter((m) => !m.relatedCourseId);
-    const specific = list.filter((m) => m.relatedCourseId);
-    return [...generic, ...specific].slice(0, 6);
-  };
-
-  return (
-    <section
-      id="promo-media"
-      className="mx-auto max-w-6xl scroll-mt-20 px-4 py-10 sm:py-14"
-      aria-label="影音宣傳"
-    >
-      <div className="space-y-4 text-center sm:text-left">
-        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-          影音宣傳｜先看見上課成果與氛圍
-        </h2>
-        <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:mx-0 sm:max-w-none sm:text-base">
-          不用只看文字。用 1–3 分鐘了解「你會做到什麼、怎麼被帶著做出成果」。
-        </p>
-      </div>
-
-      <div className="mt-8">
-        <Tabs defaultValue={COURSE_CATEGORIES[0]} className="w-full">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="w-full sm:w-auto">
-              {COURSE_CATEGORIES.map((cat) => (
-                <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
-                  {getCourseCategoryLabel(cat)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <ScrollToFormButton
-              label="免費預約｜我想看適合的影音與課程"
-              placement="promo_media_header"
-              className="hidden h-10 sm:inline-flex"
-              size="default"
-            />
-          </div>
-
-          {COURSE_CATEGORIES.map((cat) => {
-            const list = getForCategory(cat);
-            const m = COURSE_CATEGORY_MARKETING[cat];
-            return (
-              <TabsContent key={cat} value={cat} className="mt-6">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
-                    {m.tabTitle} 的影音
-                  </h3>
-                  <p className="text-sm text-muted-foreground sm:text-base">
-                    {m.tabSubtitle}
-                  </p>
-                </div>
-
-                <div className="mt-5 -mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="flex gap-4">
-                    {list.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        className={cn(
-                          "group w-[82%] shrink-0 text-left sm:w-[360px]",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl"
-                        )}
-                        onClick={() => openMedia(v, `promo_tab_${cat}`)}
-                      >
-                        <Card className="overflow-hidden border shadow-sm transition-shadow group-hover:shadow-md">
-                          <div className="relative aspect-video w-full bg-muted">
-                            <Image
-                              src={v.thumbnailUrl}
-                              alt={v.title}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 640px) 80vw, 360px"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
-                            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="line-clamp-1 text-sm font-semibold text-white/95">
-                                  {v.title}
-                                </p>
-                                <p className="line-clamp-2 text-xs text-white/75">
-                                  {v.description}
-                                </p>
-                              </div>
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/90 text-black shadow-md">
-                                <Play className="h-5 w-5 translate-x-[1px]" />
-                              </div>
-                            </div>
-                          </div>
-                          <CardContent className="space-y-2 p-4">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant="secondary">
-                                {v.relatedCourseId ? "課程影音" : "宣傳精華"}
-                              </Badge>
-                              <Badge variant="outline">{getCourseCategoryLabel(cat)}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {v.description}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <SectionCtaBar
-                    title="想看最適合你的影音與課程路線？"
-                    subtitle="留下聯絡方式，我們會依你的背景推薦對應分類與課程，並說清楚補助/名額/時段。"
-                    primaryLabel={m.listCtaLabel}
-                    placementPrimary={`promo_media_cta_${cat}`}
-                  />
-                </div>
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl overflow-hidden p-0">
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle>{active?.title ?? "播放影片"}</DialogTitle>
-            <DialogDescription>{active?.description ?? ""}</DialogDescription>
-          </DialogHeader>
-          <div className="px-6 pb-6">
-            <div className="relative aspect-video w-full overflow-hidden rounded-xl border bg-black">
-              <iframe
-                key={open ? active?.videoUrl : "closed"}
-                className="absolute inset-0 h-full w-full"
-                src={open && active?.videoUrl ? getYoutubeEmbedUrl(active.videoUrl) : undefined}
-                title={active?.title ?? "video"}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </section>
-  );
-}
 
 function VideoPreview({ media }: { media: MediaItem | null }) {
   const [open, setOpen] = React.useState(false);
@@ -509,59 +144,6 @@ function VideoPreview({ media }: { media: MediaItem | null }) {
   );
 }
 
-/** 區塊間 CTA 橫幅（高轉換節奏用） */
-function SectionCtaBar({
-  title,
-  subtitle,
-  primaryLabel,
-  secondaryLabel,
-  onSecondaryScrollTo,
-  placementPrimary,
-}: {
-  title: string;
-  subtitle: string;
-  primaryLabel: string;
-  secondaryLabel?: string;
-  onSecondaryScrollTo?: string;
-  placementPrimary: string;
-}) {
-  return (
-    <div className="rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-background px-4 py-6 sm:px-8 sm:py-8">
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 text-center sm:mx-0 sm:text-left">
-        <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
-          {title}
-        </h3>
-        <p className="text-sm text-muted-foreground sm:text-base">{subtitle}</p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-3 md:justify-start">
-          <ScrollToFormButton
-            label={primaryLabel}
-            placement={placementPrimary}
-            className="h-12 rounded-xl text-base shadow-md"
-          />
-          {secondaryLabel && onSecondaryScrollTo ? (
-            <Button
-              variant="outline"
-              size="lg"
-              className="h-12 rounded-xl text-base"
-              onClick={() => {
-                track("cta_click", {
-                  placement: `${placementPrimary}_secondary`,
-                  label: secondaryLabel,
-                });
-                document
-                  .getElementById(onSecondaryScrollTo)
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              {secondaryLabel}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function LandingPage() {
   const hydrated = useHydrated();
   const { toast } = useToast();
@@ -605,14 +187,10 @@ export function LandingPage() {
     "免費預約｜確認補助與名額";
   const stickyCtaLabel = primaryCtaLabel;
 
-  const handleCaseSectionCta = (label: string) => {
-    scrollToLeadForm("cases_stories", label);
-  };
-
   return (
     <div className="flex-1 pb-[4.5rem] sm:pb-0">
-      <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <Sparkles className="h-4 w-4" />
@@ -624,13 +202,15 @@ export function LandingPage() {
               </p>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <ThemeToggle />
           <div className="hidden shrink-0 items-center gap-1 sm:flex">
             <Button
               variant="ghost"
               size="sm"
               onClick={() =>
                 document
-                  .getElementById("social-proof")
+                  .getElementById("featured-cases")
                   ?.scrollIntoView({ behavior: "smooth" })
               }
             >
@@ -641,17 +221,29 @@ export function LandingPage() {
               size="sm"
               onClick={() =>
                 document
-                  .getElementById("understand")
+                  .getElementById("featured-courses")
                   ?.scrollIntoView({ behavior: "smooth" })
               }
             >
               課程方案
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                document
+                  .getElementById("faq")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              常見問題
             </Button>
             <ScrollToFormButton
               label="預約諮詢"
               placement="header"
               size="default"
             />
+          </div>
           </div>
         </div>
       </header>
@@ -768,7 +360,7 @@ export function LandingPage() {
             <div className="space-y-5 lg:sticky lg:top-20">
               <VideoPreview media={heroMedia} />
               <div className="hidden lg:block">
-                <Card className="border-white/10 bg-white/70 backdrop-blur dark:bg-black/30">
+                <Card className="border-border/60 bg-card/85 backdrop-blur-md dark:border-border/50 dark:bg-card/70">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">先看真實轉變</CardTitle>
                   </CardHeader>
@@ -827,49 +419,95 @@ export function LandingPage() {
             subtitle="留下聯絡方式，顧問會依你的背景（育兒／待業／轉職）給你具體建議，不推銷、不綁約。"
             primaryLabel="免費預約｜一對一諮詢"
             secondaryLabel="先看學員故事"
-            onSecondaryScrollTo="social-proof"
+            onSecondaryScrollTo="featured-cases"
             placementPrimary="trust_section"
           />
         </div>
       </section>
 
-      {/* —— 社會證明（案例已在 Hero 旁，此處作錨點與補強節奏） —— */}
+      <Separator className="mx-auto max-w-6xl" />
+
       <section
-        id="social-proof"
-        className="mx-auto max-w-6xl scroll-mt-20 px-4 py-10 sm:py-14"
+        id="featured-courses"
+        className="scroll-mt-20 mx-auto max-w-6xl px-4 py-10 sm:py-14"
       >
-        <div className="space-y-4 text-center sm:text-left">
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-            他們也曾卡關——後來選擇用「方法」而不是硬撐
-          </h2>
-          <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:mx-0 sm:max-w-none sm:text-base">
-            精選案例可於首屏右側瀏覽；若你符合類似情境，我們會在諮詢中對照可行課程與補助方向。
-          </p>
-        </div>
-        <div className="mt-8 space-y-8">
-          <FeaturedCasesStories items={cases} onCta={handleCaseSectionCta} />
-          <SectionCtaBar
-            title="想知道自己能不能複製類似路徑？"
-            subtitle="填寫表單後，我們會在 1 個工作天內聯繫，協助你對齊課程與補助評估。"
-            primaryLabel="免費預約｜取得個人化建議"
-            placementPrimary="social_proof_mid"
-          />
-        </div>
+        <CoursePlanSection
+          courses={courses}
+          onCourseLeadCta={({ placement, label, courseTitle }) => {
+            scrollToLeadForm(placement, label);
+            if (courseTitle) {
+              setForm((f) => ({ ...f, course: courseTitle }));
+            }
+          }}
+        />
       </section>
 
       <Separator className="mx-auto max-w-6xl" />
 
-      {/* 影音宣傳（依課程分類） */}
-      <MediaPromoSection courses={courses} media={media} />
+      <FeaturedCasesSection cases={cases} />
 
       <Separator className="mx-auto max-w-6xl" />
 
-      {/* —— UNDERSTAND：適合對象 + 課程 —— */}
+      <VideoSection courses={courses} media={media} />
+
+      <Separator className="mx-auto max-w-6xl" />
+
+      {/* —— UNDERSTAND：亮點 + 適合對象 —— */}
       <section
         id="understand"
         className="mx-auto max-w-6xl scroll-mt-20 px-4 py-10 sm:py-14"
       >
         <div className="space-y-10">
+          <div className="rounded-2xl border border-border/80 bg-muted/20 px-4 py-8 dark:bg-muted/10 sm:px-8 sm:py-10">
+            <div className="mx-auto max-w-2xl text-center sm:mx-0 sm:max-w-none sm:text-left">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5" />
+                課程亮點
+              </div>
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+                我們把學習設計成「每週都交得出東西」
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                不是聽完就算了——你會持續產出可放進履歷與作品集的具體成果。
+              </p>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              {[
+                {
+                  t: "作品集導向",
+                  d: "每週任務串成可展示專題，面試時說得出「你做了什麼」。",
+                },
+                {
+                  t: "助教陪跑制",
+                  d: "卡關不隔夜，降低自學中斷與放棄率。",
+                },
+                {
+                  t: "就業敘事訓練",
+                  d: "履歷、自我介紹與技術問答一起打磨，對齊真實職缺語言。",
+                },
+              ].map((x) => (
+                <Card
+                  key={x.t}
+                  className="border bg-background/90 shadow-sm dark:bg-background/50"
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">{x.t}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground">
+                    {x.d}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="mt-8 flex justify-center sm:justify-start">
+              <ScrollToFormButton
+                label="免費預約｜我想了解學習節奏"
+                placement="highlights_section"
+                className="h-12 rounded-xl px-6"
+              />
+            </div>
+          </div>
+
           <div className="rounded-2xl border bg-muted/20 px-4 py-8 sm:px-8 sm:py-10">
             <div className="mx-auto max-w-2xl text-center sm:mx-0 sm:max-w-none sm:text-left">
               <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -906,186 +544,10 @@ export function LandingPage() {
               />
             </div>
           </div>
-
-          <div>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="space-y-2">
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                  課程方案（依分類）
-                </h2>
-                <p className="text-sm text-muted-foreground sm:text-base">
-                  先選分類再挑課程；諮詢時再依你的背景調整最短可行路線。
-                </p>
-              </div>
-              <ScrollToFormButton
-                label="免費預約｜幫我選最適合分類"
-                placement="courses_header"
-                className="hidden h-11 sm:inline-flex"
-                size="default"
-              />
-            </div>
-
-            <div className="mt-8">
-              <Tabs defaultValue={COURSE_CATEGORIES[0]} className="w-full">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <TabsList className="w-full sm:w-auto">
-                    {COURSE_CATEGORIES.map((cat) => (
-                      <TabsTrigger key={cat} value={cat} className="flex-1 sm:flex-none">
-                        {getCourseCategoryLabel(cat)}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </div>
-
-                {COURSE_CATEGORIES.map((cat) => {
-                  const m = COURSE_CATEGORY_MARKETING[cat];
-                  const list = courses.filter((c) => c.category === cat);
-                  return (
-                    <TabsContent key={cat} value={cat} className="mt-6">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                        <div className="space-y-1">
-                          <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
-                            {m.tabTitle}
-                          </h3>
-                          <p className="text-sm text-muted-foreground sm:text-base">
-                            {m.tabSubtitle}
-                          </p>
-                        </div>
-                        <ScrollToFormButton
-                          label={m.listCtaLabel}
-                          placement={`courses_tab_${cat}`}
-                          className="h-11 sm:h-10"
-                          size="default"
-                        />
-                      </div>
-
-                      <div className="mt-6 grid gap-6 md:grid-cols-2">
-                        {list.length === 0 ? (
-                          <div className="rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground md:col-span-2">
-                            目前此分類尚未上架課程。你仍可先預約諮詢，我們會依你的情況推薦最適合的方案。
-                          </div>
-                        ) : (
-                          list.map((c) => (
-                            <Card
-                              key={c.id}
-                              className="overflow-hidden border shadow-sm transition-shadow hover:shadow-md"
-                            >
-                              <div className="relative aspect-[16/9] w-full bg-muted">
-                                <Image
-                                  src={c.image}
-                                  alt={c.title}
-                                  fill
-                                  className="object-cover"
-                                  sizes="(max-width: 768px) 100vw, 520px"
-                                />
-                              </div>
-                              <CardHeader className="space-y-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge variant="secondary">
-                                    {getCourseCategoryLabel(c.category)}
-                                  </Badge>
-                                  {c.subsidy ? (
-                                    <Badge variant="outline">補助可諮詢</Badge>
-                                  ) : null}
-                                </div>
-                                <CardTitle className="text-lg leading-snug">
-                                  {c.title}
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground">
-                                  {c.subtitle}
-                                </p>
-                              </CardHeader>
-                              <CardContent className="space-y-3">
-                                <p className="text-sm text-muted-foreground">
-                                  {c.shortDescription}
-                                </p>
-                                <div className="grid gap-2 text-sm">
-                                  <div className="flex gap-2">
-                                    <span className="w-14 shrink-0 text-muted-foreground">
-                                      地點
-                                    </span>
-                                    <span className="font-medium">{c.location}</span>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <span className="w-14 shrink-0 text-muted-foreground">
-                                      時間
-                                    </span>
-                                    <span className="font-medium">{c.schedule}</span>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <span className="w-14 shrink-0 text-muted-foreground">
-                                      費用
-                                    </span>
-                                    <span className="font-medium">{c.fee}</span>
-                                  </div>
-                                </div>
-                              </CardContent>
-                              <CardFooter className="flex flex-col gap-3 border-t bg-muted/20 pt-4 sm:flex-row sm:justify-stretch">
-                                <Button
-                                  variant="outline"
-                                  className="h-11 w-full rounded-xl sm:flex-1"
-                                  onClick={() => {
-                                    track("cta_click", {
-                                      placement: `course_card_${cat}`,
-                                      courseId: c.id,
-                                      label: m.cardSecondaryCtaLabel,
-                                    });
-                                    scrollToLeadForm(
-                                      `course_card_${cat}`,
-                                      m.cardSecondaryCtaLabel
-                                    );
-                                    setForm((f) => ({ ...f, course: c.title }));
-                                  }}
-                                >
-                                  {m.cardSecondaryCtaLabel}
-                                </Button>
-                                <Button
-                                  className="h-11 w-full rounded-xl font-semibold sm:flex-1"
-                                  onClick={() => {
-                                    track("cta_click", {
-                                      placement: `course_card_primary_${cat}`,
-                                      courseId: c.id,
-                                      label: m.cardPrimaryCtaLabel,
-                                    });
-                                    scrollToLeadForm(
-                                      `course_card_primary_${cat}`,
-                                      m.cardPrimaryCtaLabel
-                                    );
-                                    setForm((f) => ({ ...f, course: c.title }));
-                                  }}
-                                >
-                                  {m.cardPrimaryCtaLabel}
-                                </Button>
-                              </CardFooter>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    </TabsContent>
-                  );
-                })}
-              </Tabs>
-            </div>
-
-            <div className="mt-8 sm:hidden">
-              <ScrollToFormButton
-                label="免費預約｜幫我選最適合分類"
-                placement="courses_footer_mobile"
-                className="h-12 w-full rounded-xl text-base"
-              />
-            </div>
-
-            <div className="mt-10">
-              <SectionCtaBar
-                title="名額與梯次會依審核與報名狀況調整，建議先預約鎖定諮詢"
-                subtitle="你不需要當下決定報名；我們會先幫你把補助、時程、學習負荷講清楚。"
-                primaryLabel="免費預約｜保留諮詢優先序"
-                placementPrimary="after_courses"
-              />
-            </div>
-          </div>
         </div>
       </section>
+
+      <FaqSection />
 
       {/* —— ACT：表單 —— */}
       <section className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pb-20 sm:pt-6">
@@ -1113,7 +575,7 @@ export function LandingPage() {
               {/* 名額／開班緊迫感（靜態文案，日後可接 CMS） */}
               <div
                 role="status"
-                className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm"
+                className="rounded-xl border border-amber-500/35 bg-amber-500/[0.07] px-4 py-3 text-sm dark:border-amber-500/25 dark:bg-amber-500/10"
               >
                 <p className="flex items-start gap-2 font-semibold text-foreground">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />

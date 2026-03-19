@@ -61,46 +61,42 @@ export default function AdminCoursesEditPage() {
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-muted/20">
-        <div className="mx-auto max-w-6xl px-4 py-10">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">找不到課程</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                可能已被刪除，或資料尚未在此瀏覽器建立。
-              </p>
-              <Button asChild className="rounded-xl">
-                <Link href="/admin/courses">回課程列表</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">找不到課程</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              可能已被刪除，或資料尚未在此瀏覽器建立。
+            </p>
+            <Button asChild className="rounded-xl">
+              <Link href="/admin/courses">回課程列表</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="min-w-0 space-y-1">
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-sm font-semibold">編輯課程</p>
+              <h1 className="text-lg font-semibold tracking-tight">編輯課程</h1>
               <Badge variant="secondary">
                 {getCourseCategoryLabel(item.category)}
               </Badge>
             </div>
-            <p className="truncate text-xs text-muted-foreground">{item.title}</p>
+            <p className="truncate text-sm text-muted-foreground">{item.title}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" className="rounded-xl">
-              <Link href="/admin/courses">回列表</Link>
-            </Button>
-          </div>
+          <Button asChild variant="outline" className="shrink-0 rounded-xl">
+            <Link href="/admin/courses">回列表</Link>
+          </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
@@ -427,7 +423,7 @@ export default function AdminCoursesEditPage() {
           </Card>
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

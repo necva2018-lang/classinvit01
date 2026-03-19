@@ -9,6 +9,7 @@ export const seedMedia: MediaItem[] = [
     thumbnailUrl:
       "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1400&q=80",
     type: "hero",
+    category: null,
     isPublished: true,
     sortOrder: 10,
     createdAt: new Date().toISOString(),
@@ -35,6 +36,7 @@ export const seedMedia: MediaItem[] = [
     thumbnailUrl:
       "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=80",
     type: "course",
+    category: "unemployed_subsidy",
     relatedCourseId: "course_web",
     isPublished: true,
     sortOrder: 30,
@@ -49,6 +51,7 @@ export const seedMedia: MediaItem[] = [
     thumbnailUrl:
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80",
     type: "course",
+    category: "employed_subsidy",
     relatedCourseId: "course_data",
     isPublished: true,
     sortOrder: 40,
@@ -63,6 +66,7 @@ export const seedMedia: MediaItem[] = [
     thumbnailUrl:
       "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1400&q=80",
     type: "course",
+    category: "self_paid",
     relatedCourseId: "course_ai_office",
     isPublished: true,
     sortOrder: 50,

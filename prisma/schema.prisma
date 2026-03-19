@@ -73,6 +73,8 @@ model MediaItem {
   videoUrl       String
   thumbnailUrl   String
   type           MediaType
+  /** 前台分類 Tab 用；若空則依 relatedCourseId 推斷 */
+  category       CourseCategory?
   isPublished    Boolean  @default(false)
   sortOrder      Int      @default(50)
   createdAt      DateTime @default(now())

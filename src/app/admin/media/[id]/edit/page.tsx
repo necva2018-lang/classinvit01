@@ -4,8 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
-import type { MediaItem, MediaType } from "@/types";
+import type { CourseCategory, MediaItem, MediaType } from "@/types";
 import * as mediaStore from "@/lib/media";
+import {
+  COURSE_CATEGORY_ORDER,
+  getCourseCategoryLabel,
+} from "@/lib/course-categories";
 import * as coursesStore from "@/lib/courses";
 import * as casesStore from "@/lib/cases";
 
@@ -50,22 +54,20 @@ export default function AdminMediaEditPage() {
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-muted/20">
-        <div className="mx-auto max-w-6xl px-4 py-10">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">找不到影音</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                可能已被刪除，或資料尚未在此瀏覽器建立。
-              </p>
-              <Button asChild className="rounded-xl">
-                <Link href="/admin/media">回影音列表</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">找不到影音</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              可能已被刪除，或資料尚未在此瀏覽器建立。
+            </p>
+            <Button asChild className="rounded-xl">
+              <Link href="/admin/media">回影音列表</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -74,24 +76,24 @@ export default function AdminMediaEditPage() {
   const showCase = item.type === "case";
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div className="min-w-0 space-y-1">
+    <>
+      <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-sm font-semibold">編輯影音</p>
+              <h1 className="text-lg font-semibold tracking-tight">編輯影音</h1>
               <Badge variant="secondary">{MEDIA_TYPE_LABEL[item.type]}</Badge>
               <Badge variant={item.isPublished ? "default" : "outline"}>
                 {item.isPublished ? "已上架" : "未上架"}
               </Badge>
             </div>
-            <p className="truncate text-xs text-muted-foreground">{item.title}</p>
+            <p className="truncate text-sm text-muted-foreground">{item.title}</p>
           </div>
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline" className="shrink-0 rounded-xl">
             <Link href="/admin/media">回列表</Link>
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
@@ -159,6 +161,39 @@ export default function AdminMediaEditPage() {
                       }
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>課程分類（可選）</Label>
+                  <p className="text-xs text-muted-foreground">
+                    首頁影音分類 Tab 會優先採用此欄位；空白時可由關聯課程推斷。
+                  </p>
+                  <Select
+                    value={item.category ?? "none"}
+                    onValueChange={(v) =>
+                      setItem((x) =>
+                        x
+                          ? {
+                              ...x,
+                              category:
+                                v === "none" ? null : (v as CourseCategory),
+                            }
+                          : x
+                      )
+                    }
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="不指定" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">不指定</SelectItem>
+                      {COURSE_CATEGORY_ORDER.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {getCourseCategoryLabel(cat)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">
@@ -335,7 +370,7 @@ export default function AdminMediaEditPage() {
           </Card>
         </div>
       </main>
-    </div>
+    </>
   );
 }
 

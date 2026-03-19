@@ -1,35 +1,70 @@
 @import "tailwindcss";
 
+/* 與 next-themes `attribute="class"` 對齊：僅在 html.dark 時套用 dark: 變體 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  /* Light：柔白底、略冷灰，降低刺眼與「死白」感 */
+  --background: 210 24% 97%;
+  --foreground: 222 47% 11%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 222 47% 11%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+  --popover-foreground: 222 47% 11%;
 
-  --primary: 222.2 47.4% 11.2%;
+  --primary: 221 83% 42%;
   --primary-foreground: 210 40% 98%;
 
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 214 32% 91%;
+  --secondary-foreground: 222 47% 11%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 214 28% 93%;
+  --muted-foreground: 215 16% 42%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --accent: 214 32% 91%;
+  --accent-foreground: 222 47% 11%;
 
-  --destructive: 0 84.2% 60.2%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --border: 214 22% 86%;
+  --input: 214 22% 86%;
+  --ring: 221 83% 42%;
 
   --radius: 0.9rem;
+}
+
+.dark {
+  /* Dark：深藍灰底、略提高卡片層次與邊界可見度 */
+  --background: 224 48% 6%;
+  --foreground: 210 36% 96%;
+
+  --card: 224 42% 10%;
+  --card-foreground: 210 36% 96%;
+
+  --popover: 224 42% 10%;
+  --popover-foreground: 210 36% 96%;
+
+  --primary: 217 91% 62%;
+  --primary-foreground: 224 71% 5%;
+
+  --secondary: 217 30% 16%;
+  --secondary-foreground: 210 36% 96%;
+
+  --muted: 217 26% 14%;
+  --muted-foreground: 215 18% 72%;
+
+  --accent: 217 28% 17%;
+  --accent-foreground: 210 36% 96%;
+
+  --destructive: 0 62% 48%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217 22% 20%;
+  --input: 217 22% 20%;
+  --ring: 217 91% 62%;
 }
 
 @theme inline {
@@ -55,38 +90,6 @@
   --radius: var(--radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
 }
 
 @layer base {
