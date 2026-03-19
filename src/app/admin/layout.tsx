@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/admin", label: "總覽" },
+  { href: "/admin/hero", label: "Hero" },
   { href: "/admin/courses", label: "課程" },
   { href: "/admin/cases", label: "案例" },
   { href: "/admin/media", label: "影音" },

@@ -1,14 +1,9 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import {
-  Bot,
   Clock,
-  Cpu,
-  Gift,
   GraduationCap,
-  Play,
   ShieldCheck,
   Sparkles,
   TrendingUp,
@@ -20,10 +15,15 @@ import * as coursesStore from "@/lib/courses";
 import * as casesStore from "@/lib/cases";
 import * as mediaStore from "@/lib/media";
 import * as leadsStore from "@/lib/leads";
-import { cn } from "@/lib/utils";
-import { getYoutubeEmbedUrl } from "@/lib/video-embed";
+import {
+  HERO_STORAGE_KEY,
+  loadHeroForPublic,
+  seedHeroContent,
+} from "@/lib/hero";
+import { runHeroCta } from "@/lib/hero-cta";
 
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { HeroSection } from "@/components/landing/hero-section";
 import { CoursePlanSection } from "@/components/landing/course-plan-section";
 import { FeaturedCasesSection } from "@/components/landing/featured-cases-section";
 import { FaqSection } from "@/components/landing/faq-section";
@@ -36,7 +36,6 @@ import {
 } from "@/components/landing/lead-form-actions";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -44,13 +43,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -62,88 +54,6 @@ function useHydrated() {
   return hydrated;
 }
 
-const HERO_BADGES: { label: string; icon?: React.ReactNode }[] = [
-  { label: "政府補助可諮詢", icon: <Gift className="h-3 w-3" /> },
-  { label: "免費諮詢零壓力" },
-  { label: "零基礎可跟" },
-  { label: "專業設備教室", icon: <Cpu className="h-3 w-3" /> },
-  { label: "AI 工具應用", icon: <Bot className="h-3 w-3" /> },
-];
-
-function VideoPreview({ media }: { media: MediaItem | null }) {
-  const [open, setOpen] = React.useState(false);
-  if (!media) return null;
-
-  return (
-    <>
-      <div id="hero-video" className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground sm:text-sm">
-          影音預覽 · 約 3 分鐘了解課程與就業路線
-        </p>
-        <button
-          type="button"
-          className={cn(
-            "group relative w-full overflow-hidden rounded-2xl border bg-gradient-to-br from-muted/60 to-background shadow-sm",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          )}
-          onClick={() => {
-            track("video_preview_open", { id: media.id, type: media.type });
-            setOpen(true);
-          }}
-          aria-label={`播放影片：${media.title}`}
-        >
-          <div className="relative aspect-video w-full">
-            <Image
-              src={media.thumbnailUrl}
-              alt={media.title}
-              fill
-              priority
-              loading="eager"
-              className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-              sizes="(max-width: 768px) 100vw, 520px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
-              <div className="space-y-1 text-left">
-                <p className="text-sm font-medium text-white/90 line-clamp-1">
-                  {media.title}
-                </p>
-                <p className="text-xs text-white/70 line-clamp-2">
-                  {media.description}
-                </p>
-              </div>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/90 text-black shadow-md transition group-hover:bg-white">
-                <Play className="h-5 w-5 translate-x-[1px]" />
-              </div>
-            </div>
-          </div>
-        </button>
-      </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl overflow-hidden p-0">
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle>{media.title}</DialogTitle>
-            <DialogDescription>{media.description}</DialogDescription>
-          </DialogHeader>
-          <div className="px-6 pb-6">
-            <div className="relative aspect-video w-full overflow-hidden rounded-xl border bg-black">
-              <iframe
-                key={open ? media.videoUrl : "closed"}
-                className="absolute inset-0 h-full w-full"
-                src={open ? getYoutubeEmbedUrl(media.videoUrl) : undefined}
-                title={media.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
 export function LandingPage() {
   const hydrated = useHydrated();
   const { toast } = useToast();
@@ -152,6 +62,26 @@ export function LandingPage() {
   const [cases, setCases] = React.useState<CaseItem[]>([]);
   const [heroMedia, setHeroMedia] = React.useState<MediaItem | null>(null);
   const [media, setMedia] = React.useState<MediaItem[]>([]);
+  const [heroContent, setHeroContent] = React.useState(() => seedHeroContent());
+
+  const refreshHero = React.useCallback(async () => {
+    const h = await loadHeroForPublic();
+    setHeroContent(h);
+  }, []);
+
+  React.useEffect(() => {
+    if (!hydrated) return;
+    void refreshHero();
+  }, [hydrated, refreshHero]);
+
+  React.useEffect(() => {
+    if (!hydrated) return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === HERO_STORAGE_KEY) void refreshHero();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [hydrated, refreshHero]);
 
   React.useEffect(() => {
     if (!hydrated) return;
@@ -182,10 +112,7 @@ export function LandingPage() {
   });
 
   const primaryCourse = courses[0] ?? null;
-  /** 主轉換 CTA：比課程內建 cta 更偏「行動＋利益」 */
-  const primaryCtaLabel =
-    "免費預約｜確認補助與名額";
-  const stickyCtaLabel = primaryCtaLabel;
+  const stickyCtaLabel = heroContent.primaryCtaLabel;
 
   return (
     <div className="flex-1 pb-[4.5rem] sm:pb-0">
@@ -248,131 +175,11 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* —— SEE：首屏 —— */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute -top-24 left-1/2 h-[380px] w-[min(100vw,900px)] -translate-x-1/2 rounded-full bg-gradient-to-r from-primary/12 via-sky-500/10 to-emerald-500/10 blur-3xl sm:h-[420px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(36rem_18rem_at_50%_0%,hsl(var(--background)/0.92),transparent)] dark:bg-[radial-gradient(36rem_18rem_at_50%_0%,hsl(var(--background)/0.5),transparent)]" />
-        </div>
-
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-14 lg:py-16">
-          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:items-start">
-            {/* 左：文案 + CTA（手機先呈現核心，不堆滿） */}
-            <div className="space-y-5 sm:space-y-6">
-              <div className="-mx-1 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-visible">
-                {HERO_BADGES.map((b) => (
-                  <Badge
-                    key={b.label}
-                    variant="secondary"
-                    className="shrink-0 rounded-full px-3 py-1 text-xs font-normal sm:text-[13px]"
-                  >
-                    {b.icon ? (
-                      <span className="mr-1 inline-flex opacity-80">
-                        {b.icon}
-                      </span>
-                    ) : null}
-                    {b.label}
-                  </Badge>
-                ))}
-              </div>
-
-              <div className="space-y-3 sm:space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary sm:text-sm">
-                  職業訓練 · 就業導向
-                </p>
-                <h1 className="text-pretty text-[1.65rem] font-bold leading-tight tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.12]">
-                  用
-                  <span className="text-primary">可驗證的技能</span>
-                  重返職場：
-                  <span className="block sm:inline sm:pl-1">
-                    補助、陪跑、作品集一次到位
-                  </span>
-                </h1>
-                <p className="max-w-xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-lg sm:leading-relaxed">
-                  專為失業／待業、二度就業、轉職與第二專長設計。先釐清補助與學習路線，再用每週任務把焦慮變成進度——
-                  <span className="font-medium text-foreground/90">
-                    你不需先很厲害才開始。
-                  </span>
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <ScrollToFormButton
-                  label={primaryCtaLabel}
-                  placement="hero_primary"
-                  className="h-12 min-h-[48px] w-full rounded-xl text-base font-semibold shadow-md sm:w-auto sm:min-w-[240px]"
-                />
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 min-h-[48px] w-full rounded-xl text-base sm:w-auto"
-                  onClick={() => {
-                    track("cta_click", {
-                      placement: "hero_secondary",
-                      label: "先看課程介紹影片",
-                    });
-                    document
-                      .getElementById("hero-video")
-                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }}
-                >
-                  <Play className="h-4 w-4" />
-                  先看課程介紹影片
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground sm:text-sm">
-                全程可免費諮詢，確認適合再決定；補助資格以實際審核為準。
-              </p>
-
-              <div className="grid gap-3 rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm sm:grid-cols-3 sm:p-5">
-                <div className="flex items-start gap-3">
-                  <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold">對齊就業技能</p>
-                    <p className="text-xs text-muted-foreground">
-                      產出能投履歷的作品
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold">每週可追進度</p>
-                    <p className="text-xs text-muted-foreground">
-                      降低半途放棄風險
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold">費用流程透明</p>
-                    <p className="text-xs text-muted-foreground">
-                      補助／自付先講清楚
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 右：影音 + 案例（桌機並排；手機留白足夠） */}
-            <div className="space-y-5 lg:sticky lg:top-20">
-              <VideoPreview media={heroMedia} />
-              <div className="hidden lg:block">
-                <Card className="border-border/60 bg-card/85 backdrop-blur-md dark:border-border/50 dark:bg-card/70">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">先看真實轉變</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    下滑可看更多精選故事與影音宣傳，並保留 CTA 立即諮詢。
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* —— SEE：首屏（內容由 /admin/hero + localStorage 管理） —— */}
+      <HeroSection
+        content={heroContent}
+        heroMediaFallback={heroMedia}
+      />
 
       {/* —— TRUST：快速信任條 —— */}
       <section
@@ -729,7 +536,10 @@ export function LandingPage() {
           <Button
             className="h-12 flex-1 rounded-xl text-base font-semibold shadow-sm"
             onClick={() =>
-              scrollToLeadForm("sticky_mobile", stickyCtaLabel)
+              runHeroCta(heroContent.primaryCtaTarget, {
+                label: stickyCtaLabel,
+                placement: "sticky_mobile",
+              })
             }
           >
             {stickyCtaLabel}
@@ -742,7 +552,10 @@ export function LandingPage() {
           size="lg"
           className="rounded-full px-6 py-6 text-base font-semibold shadow-lg"
           onClick={() =>
-            scrollToLeadForm("sticky_desktop", stickyCtaLabel)
+            runHeroCta(heroContent.primaryCtaTarget, {
+              label: stickyCtaLabel,
+              placement: "sticky_desktop",
+            })
           }
         >
           {stickyCtaLabel}

@@ -76,3 +76,25 @@ export type Lead = {
   createdAt: string;
 };
 
+/** 首頁 Hero 單筆 CMS（localStorage） */
+export type HeroContent = {
+  id: ID;
+  title: string;
+  subtitle: string;
+  description: string;
+  badges: string[];
+  primaryCtaLabel: string;
+  /** 行為：`form`＝捲動至諮詢表單；其餘視為 DOM `id`（如 `hero-video`、`featured-courses`）；`http` 開頭為外開連結 */
+  primaryCtaTarget: string;
+  secondaryCtaLabel: string;
+  secondaryCtaTarget: string;
+  heroImage: string;
+  heroVideoUrl: string;
+  heroVideoThumbnail: string;
+  showBadges: boolean;
+  showSecondaryCta: boolean;
+  showVideoPreview: boolean;
+  isPublished: boolean;
+  updatedAt: string;
+};
+

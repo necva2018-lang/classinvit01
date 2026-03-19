@@ -219,10 +219,15 @@ export default function AdminDashboardPage() {
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">下一步（管理入口）</CardTitle>
               <CardDescription>
-                我會接著把 Courses / Cases / Media 做成完整 CRUD。行動版會優先卡片式，桌機提供表格＋搜尋／篩選。
+                Hero、課程、案例、影音與名單；行動版優先卡片式，桌機可表格＋搜尋／篩選。
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <Button asChild variant="outline" className="justify-between rounded-xl">
+                <Link href="/admin/hero">
+                  首頁 Hero <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
               <Button asChild variant="outline" className="justify-between rounded-xl">
                 <Link href="/admin/courses">
                   課程管理 <ArrowRight className="h-4 w-4" />

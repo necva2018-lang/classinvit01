@@ -100,3 +100,25 @@ model Lead {
   @@index([createdAt])
 }
 
+/** 首頁 Hero 單筆設定（全站一列，id 固定為 site） */
+model SiteHero {
+  id                 String   @id @default("site")
+  title              String
+  subtitle           String
+  description        String
+  badges             String[]
+  primaryCtaLabel    String
+  primaryCtaTarget   String
+  secondaryCtaLabel  String
+  secondaryCtaTarget String
+  heroImage          String   @default("")
+  heroVideoUrl       String   @default("")
+  heroVideoThumbnail String   @default("")
+  showBadges         Boolean  @default(true)
+  showSecondaryCta   Boolean  @default(true)
+  showVideoPreview   Boolean  @default(true)
+  isPublished        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
