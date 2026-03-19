@@ -3,7 +3,6 @@ import { createSeedHeroContent } from "@/data/seed-hero";
 import {
   isBrowser,
   nowIso,
-  safeJsonResponse,
   storageGet,
   storageSet,
 } from "@/lib/storage";
@@ -23,6 +22,9 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function normalizeHero(raw: unknown): HeroContent | null {
   if (!isRecord(raw)) return null;
+  if ("error" in raw && typeof raw.error === "string" && !("title" in raw)) {
+    return null;
+  }
   const s = seedHeroContent();
   const badges = raw.badges;
   const merged: HeroContent = {
@@ -76,12 +78,48 @@ function normalizeHero(raw: unknown): HeroContent | null {
   return merged;
 }
 
+/** 合併 seed，確保 JSON 不會因 undefined 缺欄位 */
+export function buildHeroPutPayload(content: HeroContent): Record<string, unknown> {
+  const s = seedHeroContent();
+  const c = { ...s, ...content };
+  return {
+    title: (c.title?.trim() || s.title).slice(0, 2000),
+    subtitle: c.subtitle ?? "",
+    description: c.description ?? "",
+    badges: Array.isArray(c.badges) ? c.badges.map((b) => String(b)) : s.badges,
+    primaryCtaLabel: (c.primaryCtaLabel?.trim() || s.primaryCtaLabel).slice(
+      0,
+      500
+    ),
+    primaryCtaTarget: c.primaryCtaTarget ?? "form",
+    secondaryCtaLabel: c.secondaryCtaLabel ?? "",
+    secondaryCtaTarget: c.secondaryCtaTarget ?? "hero-video",
+    heroImage: c.heroImage ?? "",
+    heroVideoUrl: c.heroVideoUrl ?? "",
+    heroVideoThumbnail: c.heroVideoThumbnail ?? "",
+    showBadges: Boolean(c.showBadges),
+    showSecondaryCta: Boolean(c.showSecondaryCta),
+    showVideoPreview: Boolean(c.showVideoPreview),
+    isPublished: Boolean(c.isPublished),
+  };
+}
+
+function readApiError(json: unknown, fallback: string): string {
+  if (!isRecord(json)) return fallback;
+  const err = json.error;
+  const detail = json.detail;
+  if (typeof err === "string") {
+    return typeof detail === "string" ? `${err}：${detail}` : err;
+  }
+  return fallback;
+}
+
 async function tryFetchJson<T>(input: RequestInfo, init?: RequestInit) {
   if (!isBrowser()) return null;
   try {
     const res = await fetch(input, { ...init, cache: "no-store" });
     if (!res.ok) return null;
-    return await safeJsonResponse<T>(res);
+    return (await res.json()) as T;
   } catch {
     return null;
   }
@@ -94,39 +132,60 @@ export async function apiFetchHero(): Promise<HeroContent | null> {
   return normalizeHero(j);
 }
 
-/** 寫入 API；成功時同步寫入 localStorage 作快取 */
-export async function apiSaveHero(
-  content: HeroContent
-): Promise<HeroContent | null> {
-  const body = {
-    title: content.title,
-    subtitle: content.subtitle,
-    description: content.description,
-    badges: content.badges,
-    primaryCtaLabel: content.primaryCtaLabel,
-    primaryCtaTarget: content.primaryCtaTarget,
-    secondaryCtaLabel: content.secondaryCtaLabel,
-    secondaryCtaTarget: content.secondaryCtaTarget,
-    heroImage: content.heroImage,
-    heroVideoUrl: content.heroVideoUrl,
-    heroVideoThumbnail: content.heroVideoThumbnail,
-    showBadges: content.showBadges,
-    showSecondaryCta: content.showSecondaryCta,
-    showVideoPreview: content.showVideoPreview,
-    isPublished: content.isPublished,
-  };
-  const j = await tryFetchJson<unknown>(API, {
+export type ApiSaveHeroResult =
+  | { ok: true; data: HeroContent }
+  | { ok: false; error: string; status?: number };
+
+/**
+ * 寫入 API（PUT，405 時改 POST）；成功時同步寫入 localStorage 作快取。
+ */
+export async function apiSaveHero(content: HeroContent): Promise<ApiSaveHeroResult> {
+  if (!isBrowser()) {
+    return { ok: false, error: "非瀏覽器環境無法呼叫 API" };
+  }
+
+  const payload = buildHeroPutPayload(content);
+  const init: RequestInit = {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!j) return null;
-  const n = normalizeHero(j);
-  if (n) {
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  };
+
+  try {
+    let res = await fetch(API, init);
+    if (res.status === 405) {
+      res = await fetch(API, { ...init, method: "POST" });
+    }
+
+    const text = await res.text();
+    let json: unknown = null;
+    if (text) {
+      try {
+        json = JSON.parse(text) as unknown;
+      } catch {
+        json = { error: text.slice(0, 300) };
+      }
+    }
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: readApiError(json, text.slice(0, 200) || `HTTP ${res.status}`),
+        status: res.status,
+      };
+    }
+
+    const n = normalizeHero(json);
+    if (!n) {
+      return { ok: false, error: "伺服器回傳格式無法解析" };
+    }
     storageSet(HERO_STORAGE_KEY, n as Parameters<typeof storageSet>[1]);
-    return n;
+    return { ok: true, data: n };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "網路錯誤";
+    return { ok: false, error: msg };
   }
-  return null;
 }
 
 /** 讀取 localStorage 合併預設；無資料或格式錯誤時回傳 seed */
@@ -184,27 +243,31 @@ export function saveHeroContent(content: HeroContent): boolean {
 }
 
 /**
- * 優先 PUT /api/hero，失敗則僅存 localStorage。
- * @returns 是否成功持久化（其一成功即 true）
+ * 優先 API，失敗則僅存 localStorage。
  */
 export async function persistHero(content: HeroContent): Promise<{
   ok: boolean;
   source: "api" | "local" | "none";
   data: HeroContent;
+  /** API 失敗原因（即使已改存 localStorage 也會帶上） */
+  apiError?: string;
 }> {
   const next: HeroContent = {
     ...content,
     id: content.id || seedHeroContent().id,
     updatedAt: nowIso(),
   };
-  const fromApi = await apiSaveHero(next);
-  if (fromApi) {
-    return { ok: true, source: "api", data: fromApi };
+
+  const apiResult = await apiSaveHero(next);
+  if (apiResult.ok) {
+    return { ok: true, source: "api", data: apiResult.data };
   }
+
   const localOk = saveHeroContent(next);
   return {
     ok: localOk,
     source: localOk ? "local" : "none",
     data: localOk ? loadStoredHero() : next,
+    apiError: apiResult.error,
   };
 }

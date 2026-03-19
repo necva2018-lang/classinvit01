@@ -93,8 +93,8 @@ model Lead {
   id          String   @id @default(cuid())
   name        String
   phone       String
-  course      String
-  contactTime String
+  course      String?
+  contactTime String?
   createdAt   DateTime @default(now())
 
   @@index([createdAt])

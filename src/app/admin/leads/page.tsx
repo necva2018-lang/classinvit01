@@ -1,13 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { RefreshCw, Users } from "lucide-react";
+import { RefreshCw, Search, Users } from "lucide-react";
 
 import * as leadsStore from "@/lib/leads";
+import type { Lead } from "@/types";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -26,18 +35,33 @@ function useHydrated() {
 
 export default function AdminLeadsPage() {
   const hydrated = useHydrated();
-  const [items, setItems] = React.useState<ReturnType<typeof leadsStore.getAll>>([]);
+  const [items, setItems] = React.useState<Lead[]>([]);
+  const [qInput, setQInput] = React.useState("");
+  const [courseInput, setCourseInput] = React.useState("");
+  const [debouncedQ, setDebouncedQ] = React.useState("");
+  const [debouncedCourse, setDebouncedCourse] = React.useState("");
 
-  const refresh = React.useCallback(() => {
-    void (async () => {
-      const all = await leadsStore.apiGetAll();
-      setItems(all);
-    })();
-  }, []);
+  React.useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(qInput.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [qInput]);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedCourse(courseInput.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [courseInput]);
+
+  const refresh = React.useCallback(async () => {
+    const all = await leadsStore.apiGetAll({
+      q: debouncedQ || undefined,
+      course: debouncedCourse || undefined,
+    });
+    setItems(all);
+  }, [debouncedQ, debouncedCourse]);
 
   React.useEffect(() => {
     if (!hydrated) return;
-    refresh();
+    void refresh();
   }, [hydrated, refresh]);
 
   return (
@@ -47,14 +71,14 @@ export default function AdminLeadsPage() {
           <div>
             <h1 className="text-lg font-semibold tracking-tight">諮詢名單</h1>
             <p className="text-sm text-muted-foreground">
-              來自前台表單（API 或本地備援），依建立時間新到舊排序
+              資料來自 PostgreSQL（/api/leads），依建立時間新到舊排序
             </p>
           </div>
           <Button
             type="button"
             variant="outline"
             className="shrink-0 rounded-xl"
-            onClick={() => refresh()}
+            onClick={() => void refresh()}
           >
             <RefreshCw className="h-4 w-4" />
             重新整理
@@ -63,6 +87,40 @@ export default function AdminLeadsPage() {
       </div>
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">搜尋與篩選</CardTitle>
+            <CardDescription>
+              關鍵字會比對姓名、手機、課程；課程欄可輸入部分課程名稱。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="lead-q">關鍵字</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="lead-q"
+                  className="h-11 pl-9"
+                  placeholder="姓名、手機或課程…"
+                  value={qInput}
+                  onChange={(e) => setQInput(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lead-course">課程關鍵字</Label>
+              <Input
+                id="lead-course"
+                className="h-11"
+                placeholder="例如：前端、資料分析"
+                value={courseInput}
+                onChange={(e) => setCourseInput(e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-primary/15 bg-gradient-to-br from-primary/5 via-background to-background dark:from-primary/10">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
@@ -72,7 +130,7 @@ export default function AdminLeadsPage() {
               <div>
                 <CardTitle className="text-base">總覽</CardTitle>
                 <CardDescription>
-                  共 {hydrated ? items.length : "—"} 筆名單
+                  共 {hydrated ? items.length : "—"} 筆（符合目前篩選）
                 </CardDescription>
               </div>
             </div>
@@ -100,12 +158,18 @@ export default function AdminLeadsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-0">
-                    <Badge variant="secondary" className="max-w-full whitespace-normal text-left">
-                      {l.course}
+                    <Badge
+                      variant="secondary"
+                      className="max-w-full whitespace-normal text-left"
+                    >
+                      {l.course?.trim() ? l.course : "未填寫課程"}
                     </Badge>
                     <Separator />
                     <div className="space-y-1 text-xs text-muted-foreground">
-                      <p>方便聯繫：{l.contactTime}</p>
+                      <p>
+                        方便聯繫：
+                        {l.contactTime?.trim() ? l.contactTime : "未填寫"}
+                      </p>
                       <p>{new Date(l.createdAt).toLocaleString()}</p>
                     </div>
                   </CardContent>
@@ -138,11 +202,16 @@ export default function AdminLeadsPage() {
                       {l.phone}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="max-w-[220px] truncate font-normal">
-                        {l.course}
+                      <Badge
+                        variant="outline"
+                        className="max-w-[220px] whitespace-normal text-left font-normal"
+                      >
+                        {l.course?.trim() ? l.course : "—"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{l.contactTime}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {l.contactTime?.trim() ? l.contactTime : "—"}
+                    </TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground">
                       {new Date(l.createdAt).toLocaleString()}
                     </TableCell>

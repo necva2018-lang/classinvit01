@@ -55,15 +55,17 @@ export default function AdminHeroPage() {
   const handleSave = React.useCallback(() => {
     const next = cleanHeroForSave(draft);
     void (async () => {
-      const { ok, source, data } = await persistHero(next);
+      const { ok, source, data, apiError } = await persistHero(next);
       if (ok) {
         setDraft(data);
         toast({
-          title: "已儲存",
+          title: source === "api" ? "已儲存" : "已儲存（僅本機）",
           description:
             source === "api"
               ? "已寫入資料庫（全站共用）；並已同步到此瀏覽器快取。"
-              : "API 不可用，已改存此瀏覽器 localStorage（僅本機有效）。",
+              : apiError
+                ? `無法寫入資料庫：${apiError}。內容已暫存於此瀏覽器，其他裝置看不到。`
+                : "已改存此瀏覽器 localStorage（僅本機有效）。",
         });
       } else {
         toast({

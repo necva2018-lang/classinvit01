@@ -14,7 +14,6 @@ import type { CaseItem, Course, MediaItem } from "@/types";
 import * as coursesStore from "@/lib/courses";
 import * as casesStore from "@/lib/cases";
 import * as mediaStore from "@/lib/media";
-import * as leadsStore from "@/lib/leads";
 import {
   HERO_STORAGE_KEY,
   loadHeroForPublic,
@@ -24,6 +23,7 @@ import { runHeroCta } from "@/lib/hero-cta";
 
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { HeroSection } from "@/components/landing/hero-section";
+import { LeadForm } from "@/components/landing/LeadForm";
 import { CoursePlanSection } from "@/components/landing/course-plan-section";
 import { FeaturedCasesSection } from "@/components/landing/featured-cases-section";
 import { FaqSection } from "@/components/landing/faq-section";
@@ -32,7 +32,6 @@ import {
   ScrollToFormButton,
   SectionCtaBar,
   scrollToLeadForm,
-  track,
 } from "@/components/landing/lead-form-actions";
 
 import { Button } from "@/components/ui/button";
@@ -43,10 +42,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
 
 function useHydrated() {
   const [hydrated, setHydrated] = React.useState(false);
@@ -56,7 +52,6 @@ function useHydrated() {
 
 export function LandingPage() {
   const hydrated = useHydrated();
-  const { toast } = useToast();
 
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [cases, setCases] = React.useState<CaseItem[]>([]);
@@ -104,12 +99,9 @@ export function LandingPage() {
     };
   }, [hydrated]);
 
-  const [form, setForm] = React.useState({
-    name: "",
-    phone: "",
-    course: "",
-    contactTime: "平日白天",
-  });
+  const [injectedCourseTitle, setInjectedCourseTitle] = React.useState<
+    string | undefined
+  >(undefined);
 
   const primaryCourse = courses[0] ?? null;
   const stickyCtaLabel = heroContent.primaryCtaLabel;
@@ -242,9 +234,7 @@ export function LandingPage() {
           courses={courses}
           onCourseLeadCta={({ placement, label, courseTitle }) => {
             scrollToLeadForm(placement, label);
-            if (courseTitle) {
-              setForm((f) => ({ ...f, course: courseTitle }));
-            }
+            if (courseTitle) setInjectedCourseTitle(courseTitle);
           }}
         />
       </section>
@@ -418,113 +408,10 @@ export function LandingPage() {
             </div>
 
             <div className="p-6 sm:p-8">
-              <form
-                className="space-y-5"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  track("form_submit", {
-                    course: form.course || primaryCourse?.title || "",
-                    nameLen: form.name.trim().length,
-                  });
-                  if (!form.name.trim() || !form.phone.trim()) {
-                    toast({
-                      title: "再一下就好",
-                      description: "請填寫姓名與手機，我們才能安排專人聯繫。",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  await leadsStore.apiCreate({
-                    name: form.name.trim(),
-                    phone: form.phone.trim(),
-                    course: form.course || primaryCourse?.title || "未指定",
-                    contactTime: form.contactTime,
-                  });
-                  toast({
-                    title: "已成功送出",
-                    description:
-                      "感謝你的信任！我們將在 1 個工作天內與你聯繫，並協助確認補助與名額。",
-                  });
-                  setForm({
-                    name: "",
-                    phone: "",
-                    course: "",
-                    contactTime: "平日白天",
-                  });
-                }}
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2 sm:col-span-1">
-                    <Label htmlFor="name" className="text-sm">
-                      姓名<span className="text-destructive">＊</span>
-                    </Label>
-                    <Input
-                      id="name"
-                      autoComplete="name"
-                      placeholder="例如：王小明"
-                      value={form.name}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, name: e.target.value }))
-                      }
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="grid gap-2 sm:col-span-1">
-                    <Label htmlFor="phone" className="text-sm">
-                      手機<span className="text-destructive">＊</span>
-                    </Label>
-                    <Input
-                      id="phone"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="例如：0912-345-678"
-                      value={form.phone}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, phone: e.target.value }))
-                      }
-                      className="h-11"
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="course">想了解的課程（可選）</Label>
-                  <Input
-                    id="course"
-                    placeholder={
-                      primaryCourse
-                        ? `例如：${primaryCourse.title}`
-                        : "例如：前端就業班 / 資料分析班"
-                    }
-                    value={form.course}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, course: e.target.value }))
-                    }
-                    className="h-11"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="contactTime">方便聯繫時段</Label>
-                  <Input
-                    id="contactTime"
-                    placeholder="例如：平日晚上 7–9 點"
-                    value={form.contactTime}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, contactTime: e.target.value }))
-                    }
-                    className="h-11"
-                  />
-                </div>
-
-                <Button
-                  className="h-12 w-full rounded-xl text-base font-semibold"
-                  type="submit"
-                >
-                  送出｜安排免費諮詢（不綁約）
-                </Button>
-                <p className="text-center text-xs text-muted-foreground">
-                  送出即表示你同意我們為聯繫諮詢使用你填寫的聯絡方式；隨時可要求停止使用。
-                </p>
-              </form>
+              <LeadForm
+                injectedCourseTitle={injectedCourseTitle}
+                coursePlaceholderExample={primaryCourse?.title}
+              />
             </div>
           </div>
         </Card>

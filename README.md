@@ -7,7 +7,8 @@
 - Next.js App Router + TypeScript
 - Tailwind CSS + shadcn/ui
 - Prisma + PostgreSQL（Zeabur 可用）
-- localStorage fallback（API 不可用時）
+- **Leads 名單**：僅 PostgreSQL（無 localStorage 備援）
+- 其餘模組（課程／案例／影音等）仍可有 localStorage 備援
 
 ## Local Development
 
@@ -41,14 +42,14 @@ npm run dev
 
 ## API Endpoints
 
-- `GET/PUT /api/hero`（首頁 Hero 單筆讀寫）
+- `GET /api/hero`、`PUT /api/hero` 或 `POST /api/hero`（內容相同；部分環境若 PUT 被擋可改用 POST）
 - `GET/POST /api/courses`
 - `GET/PATCH/DELETE /api/courses/:id`
 - `GET/POST /api/cases`
 - `GET/PATCH/DELETE /api/cases/:id`
 - `GET/POST /api/media`
 - `GET/PATCH/DELETE /api/media/:id`
-- `GET/POST /api/leads`
+- `GET /api/leads?q=&course=`、`POST /api/leads`（名單僅 PostgreSQL）
 
 ## Zeabur Deployment (PostgreSQL)
 
@@ -95,5 +96,5 @@ npm run db:seed
 
 ## Notes
 
-- 後台操作（建立/編輯/刪除/上架切換）會優先走 API + PostgreSQL。
-- 若 API 異常，前端資料層會 fallback 到 localStorage，避免整站中斷。
+- **Leads**：前台表單與後台 `/admin/leads` 僅透過 Prisma + `DATABASE_URL` 存取；請勿將 `DATABASE_URL` 加上 `NEXT_PUBLIC_` 前綴。
+- 課程／案例／影音／後台操作仍可能優先 API + PostgreSQL，API 異常時部分模組會 fallback localStorage（Leads 除外）。

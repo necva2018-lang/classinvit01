@@ -16,6 +16,7 @@ import * as coursesStore from "@/lib/courses";
 import * as casesStore from "@/lib/cases";
 import * as mediaStore from "@/lib/media";
 import * as leadsStore from "@/lib/leads";
+import type { Lead } from "@/types";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ type Stat = {
 export default function AdminDashboardPage() {
   const hydrated = useHydrated();
   const [stats, setStats] = React.useState<Stat[]>([]);
-  const [latestLeads, setLatestLeads] = React.useState<ReturnType<typeof leadsStore.getAll>>([]);
+  const [latestLeads, setLatestLeads] = React.useState<Lead[]>([]);
   const [byCourse, setByCourse] = React.useState<Record<string, number>>({});
 
   React.useEffect(() => {
@@ -65,7 +66,10 @@ export default function AdminDashboardPage() {
         media.filter((m) => m.isPublished).length;
 
       const byCourse: Record<string, number> = {};
-      for (const l of leads) byCourse[l.course] = (byCourse[l.course] ?? 0) + 1;
+      for (const l of leads) {
+        const key = l.course?.trim() || "未填寫";
+        byCourse[key] = (byCourse[key] ?? 0) + 1;
+      }
       setByCourse(byCourse);
       setLatestLeads(leads.slice(0, 8));
       setStats([
@@ -144,7 +148,7 @@ export default function AdminDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
-                {s.hint ?? "localStorage 模擬（可升級 API/DB）"}
+                {s.hint ?? "課程／案例／影音可為 API+DB 或本地備援；名單為 PostgreSQL"}
               </CardContent>
             </Card>
           ))}
