@@ -33,9 +33,16 @@ type HeroFormProps = {
   onChange: (next: HeroContent) => void;
   onSave: () => void;
   disabled?: boolean;
+  isSaving?: boolean;
 };
 
-export function HeroForm({ value, onChange, onSave, disabled }: HeroFormProps) {
+export function HeroForm({
+  value,
+  onChange,
+  onSave,
+  disabled,
+  isSaving,
+}: HeroFormProps) {
   const patch = React.useCallback(
     (p: Partial<HeroContent>) => onChange({ ...value, ...p }),
     [onChange, value]
@@ -58,7 +65,7 @@ export function HeroForm({ value, onChange, onSave, disabled }: HeroFormProps) {
       <CardHeader className="space-y-1 border-b bg-muted/15 pb-4 dark:bg-muted/10">
         <CardTitle className="text-base">Hero 內容設定</CardTitle>
         <CardDescription>
-          僅一組首屏內容。儲存時會優先同步至伺服器；未勾選「已發佈」時，前台訪客仍看到系統預設文案。
+          僅一組首屏內容。儲存即寫入資料庫；未勾選「已發佈」時，前台訪客仍看到系統預設文案。
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 pt-6">
@@ -327,7 +334,7 @@ export function HeroForm({ value, onChange, onSave, disabled }: HeroFormProps) {
             onClick={onSave}
             disabled={disabled}
           >
-            儲存（伺服器優先）
+            {isSaving ? "儲存中…" : "儲存至資料庫"}
           </Button>
         </div>
 

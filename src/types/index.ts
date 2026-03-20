@@ -76,7 +76,7 @@ export type Lead = {
   createdAt: string;
 };
 
-/** 首頁 Hero 單筆 CMS（localStorage） */
+/** 首頁 Hero 單筆 CMS（PostgreSQL SiteHero + 後台 Server Action） */
 export type HeroContent = {
   id: ID;
   title: string;
