@@ -132,6 +132,62 @@ export async function apiFetchHero(): Promise<HeroContent | null> {
   return normalizeHero(j);
 }
 
+export type HeroEditableLoadState =
+  | { source: "api"; content: HeroContent }
+  | { source: "fallback"; content: HeroContent; reason?: string };
+
+/**
+ * 後台載入：區分「真的從 API/DB 讀到」與「失敗改讀 localStorage」，
+ * 避免 GET 曾靜默回 seed 時誤以為已連上資料庫。
+ */
+export async function loadHeroEditableState(): Promise<HeroEditableLoadState> {
+  if (!isBrowser()) {
+    return { source: "fallback", content: seedHeroContent() };
+  }
+  try {
+    const res = await fetch(API, { cache: "no-store" });
+    const text = await res.text();
+    let j: unknown = null;
+    if (text) {
+      try {
+        j = JSON.parse(text) as unknown;
+      } catch {
+        return {
+          source: "fallback",
+          content: loadStoredHero(),
+          reason: "伺服器回應不是有效 JSON",
+        };
+      }
+    }
+    if (!res.ok) {
+      const err =
+        isRecord(j) && typeof j.error === "string"
+          ? j.error
+          : `無法載入（HTTP ${res.status}）`;
+      return {
+        source: "fallback",
+        content: loadStoredHero(),
+        reason: err,
+      };
+    }
+    const n = normalizeHero(j);
+    if (n) {
+      return { source: "api", content: n };
+    }
+    return {
+      source: "fallback",
+      content: loadStoredHero(),
+      reason: "回傳內容格式無法辨識",
+    };
+  } catch (e) {
+    return {
+      source: "fallback",
+      content: loadStoredHero(),
+      reason: e instanceof Error ? e.message : "網路錯誤",
+    };
+  }
+}
+
 export type ApiSaveHeroResult =
   | { ok: true; data: HeroContent }
   | { ok: false; error: string; status?: number };
@@ -201,9 +257,8 @@ export function loadStoredHero(): HeroContent {
  * 後台／資料來源：優先 API，失敗則 localStorage。
  */
 export async function loadHeroEditable(): Promise<HeroContent> {
-  const api = await apiFetchHero();
-  if (api) return api;
-  return loadStoredHero();
+  const s = await loadHeroEditableState();
+  return s.content;
 }
 
 /**

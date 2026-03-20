@@ -3,10 +3,33 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
 import { createSeedHeroContent } from "@/data/seed-hero";
+import { responseIfDatabaseUrlMissing } from "@/lib/database-url-guard";
 import { prisma } from "@/lib/db";
 import type { HeroContent } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const SITE_HERO_ID = "site";
+
+function prismaErrorResponse(e: unknown) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError) {
+    const hint =
+      e.code === "P2021"
+        ? "（資料表尚未建立，請在伺服器執行 npx prisma db push 或 migrate）"
+        : e.code === "P1001"
+          ? "（無法連線資料庫，請檢查 DATABASE_URL）"
+          : "";
+    return NextResponse.json(
+      {
+        error: `資料庫錯誤 ${e.code}: ${e.message}${hint}`,
+        code: e.code,
+      },
+      { status: 500 }
+    );
+  }
+  const message = e instanceof Error ? e.message : "Unknown error";
+  return NextResponse.json({ error: message }, { status: 500 });
+}
 
 /** 欄位皆給 default，避免客戶端 JSON 缺 key 導致驗證失敗 */
 const HeroUpsertSchema = z.object({
@@ -75,8 +98,14 @@ async function parseJsonBody(req: Request): Promise<unknown> {
   }
 }
 
-/** GET：無資料列時回傳內建 seed（JSON），方便前台／後台一致 */
+/**
+ * GET：尚無列時回傳內建 seed（200），方便首次編輯；
+ * 連線／結構錯誤回 5xx，避免後台誤以為已從資料庫讀到資料。
+ */
 export async function GET() {
+  const missing = responseIfDatabaseUrlMissing();
+  if (missing) return missing;
+
   try {
     const row = await prisma.siteHero.findUnique({
       where: { id: SITE_HERO_ID },
@@ -85,12 +114,15 @@ export async function GET() {
       return NextResponse.json(createSeedHeroContent());
     }
     return NextResponse.json(prismaRowToContent(row));
-  } catch {
-    return NextResponse.json(createSeedHeroContent());
+  } catch (e) {
+    return prismaErrorResponse(e);
   }
 }
 
 async function upsertHero(req: Request) {
+  const missing = responseIfDatabaseUrlMissing();
+  if (missing) return missing;
+
   const raw = await parseJsonBody(req);
   if (raw === null || typeof raw !== "object") {
     return NextResponse.json(
@@ -123,23 +155,7 @@ async function upsertHero(req: Request) {
     });
     return NextResponse.json(prismaRowToContent(row));
   } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError) {
-      const hint =
-        e.code === "P2021"
-          ? "（資料表尚未建立，請在伺服器執行 npm run db:push 或 migrate）"
-          : e.code === "P1001"
-            ? "（無法連線資料庫，請檢查 DATABASE_URL）"
-            : "";
-      return NextResponse.json(
-        {
-          error: `資料庫寫入失敗 ${e.code}: ${e.message}${hint}`,
-          code: e.code,
-        },
-        { status: 500 }
-      );
-    }
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return prismaErrorResponse(e);
   }
 }
 

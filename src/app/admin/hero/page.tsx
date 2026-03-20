@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { HeroContent, MediaItem } from "@/types";
 import * as mediaStore from "@/lib/media";
 import {
-  loadHeroEditable,
+  loadHeroEditableState,
   persistHero,
   seedHeroContent,
 } from "@/lib/hero";
@@ -39,12 +39,19 @@ export default function AdminHeroPage() {
     if (!hydrated) return;
     let cancelled = false;
     void (async () => {
-      const [h, list] = await Promise.all([
-        loadHeroEditable(),
+      const [heroState, list] = await Promise.all([
+        loadHeroEditableState(),
         mediaStore.apiGetPublishedByType("hero"),
       ]);
       if (cancelled) return;
-      setDraft(h);
+      if (heroState.source === "fallback" && heroState.reason) {
+        toast({
+          title: "Hero 無法從資料庫載入",
+          description: heroState.reason,
+          variant: "destructive",
+        });
+      }
+      setDraft(heroState.content);
       setHeroMedia(list[0] ?? null);
     })();
     return () => {
@@ -84,7 +91,7 @@ export default function AdminHeroPage() {
           <div>
             <h1 className="text-lg font-semibold tracking-tight">首頁 Hero</h1>
             <p className="text-sm text-muted-foreground">
-              單筆設定 · 優先寫入伺服器資料庫 · API 失敗時改存 localStorage
+              單筆設定 · 寫入 PostgreSQL（SiteHero）；連線失敗時會提示並暫用本機快取
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
