@@ -10,6 +10,10 @@ import {
   persistHero,
   seedHeroContent,
 } from "@/lib/hero";
+import {
+  databaseUrlMissingToastDescription,
+  isDatabaseUrlMissingError,
+} from "@/lib/database-url-messages";
 
 import { HeroForm } from "@/components/admin/HeroForm";
 import { HeroPreview } from "@/components/admin/HeroPreview";
@@ -47,7 +51,9 @@ export default function AdminHeroPage() {
       if (heroState.source === "fallback" && heroState.reason) {
         toast({
           title: "Hero 無法從資料庫載入",
-          description: heroState.reason,
+          description: isDatabaseUrlMissingError(heroState.reason)
+            ? databaseUrlMissingToastDescription()
+            : heroState.reason,
           variant: "destructive",
         });
       }
@@ -62,7 +68,7 @@ export default function AdminHeroPage() {
   const handleSave = React.useCallback(() => {
     const next = cleanHeroForSave(draft);
     void (async () => {
-      const { ok, source, data, apiError } = await persistHero(next);
+      const { ok, source, data, apiError, apiStatus } = await persistHero(next);
       if (ok) {
         setDraft(data);
         toast({
@@ -70,9 +76,11 @@ export default function AdminHeroPage() {
           description:
             source === "api"
               ? "已寫入資料庫（全站共用）；並已同步到此瀏覽器快取。"
-              : apiError
-                ? `無法寫入資料庫：${apiError}。內容已暫存於此瀏覽器，其他裝置看不到。`
-                : "已改存此瀏覽器 localStorage（僅本機有效）。",
+              : isDatabaseUrlMissingError(apiError, apiStatus)
+                ? databaseUrlMissingToastDescription()
+                : apiError
+                  ? `無法寫入資料庫：${apiError}。內容已暫存於此瀏覽器，其他裝置看不到。`
+                  : "已改存此瀏覽器 localStorage（僅本機有效）。",
         });
       } else {
         toast({

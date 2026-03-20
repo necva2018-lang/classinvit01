@@ -306,6 +306,8 @@ export async function persistHero(content: HeroContent): Promise<{
   data: HeroContent;
   /** API 失敗原因（即使已改存 localStorage 也會帶上） */
   apiError?: string;
+  /** 例如 503＝多半為未設定 DATABASE_URL */
+  apiStatus?: number;
 }> {
   const next: HeroContent = {
     ...content,
@@ -324,5 +326,6 @@ export async function persistHero(content: HeroContent): Promise<{
     source: localOk ? "local" : "none",
     data: localOk ? loadStoredHero() : next,
     apiError: apiResult.error,
+    apiStatus: apiResult.status,
   };
 }
