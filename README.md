@@ -35,13 +35,14 @@ npm run dev
 ## 首頁 Hero（後台）
 
 - 後台路徑：`/admin/hero`（單筆編輯 + 即時預覽）。
-- 資料儲存：**優先 PostgreSQL**（`SiteHero` 單列，`id = site`）；API 失敗時後台會改存 **localStorage**（`cms:hero_content:v1`）作備援。
+- 資料儲存：**PostgreSQL**（`SiteHero` 單列，`id = site`），後台透過 **Server Action** 寫入；**未設定 `DATABASE_URL` 時無法儲存**（不會再誤顯「已儲存」）。
+- 前台仍透過 `GET /api/hero` 讀取；成功存檔後會更新瀏覽器快取，其他分頁可透過 `storage` 事件觸發刷新。
 - 未發佈（`isPublished = false`）時，前台訪客仍看到內建預設文案。
-- 部署後請執行 `npm run db:push`（或 migrate）並 `npm run db:seed` 寫入預設 Hero。
-- 跨分頁／備援：前台仍會監聽 `storage`；使用資料庫時請重新整理首頁以載入最新內容。
+- 部署後 Build 請含 `db:push`（見下方 Zeabur），並視需要執行 `npm run db:seed`。
 
 ## API Endpoints
 
+- `GET /api/health`：回傳 `databaseUrlConfigured`、`databaseReachable`（不含密碼），部署後可用來確認 Zeabur 是否帶到 `DATABASE_URL` 且 DB 可連線。
 - `GET /api/hero`、`PUT /api/hero` 或 `POST /api/hero`（內容相同；部分環境若 PUT 被擋可改用 POST）
 - `GET/POST /api/courses`
 - `GET/PATCH/DELETE /api/courses/:id`
@@ -56,11 +57,13 @@ npm run dev
 1. 在 Zeabur 建立 PostgreSQL Service。
 2. 在 Web Service 設定環境變數：
    - `DATABASE_URL=<your-postgresql-url>`
-3. Build Command（建議）：
+3. Build Command（建議，與本專案 script 對齊）：
 
 ```bash
-npm install && npm run prisma:generate && npm run db:push && npm run build
+npm install && npm run build:zeabur
 ```
+
+（等同 `prisma generate` → `prisma db push` → `next build`；**須讓 Build 階段讀得到 `DATABASE_URL`**，否則 `db push` 會失敗。）
 
 4. Start Command：
 
